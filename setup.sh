@@ -233,105 +233,21 @@ INSCRIBE_PORT=$USER_PORT docker compose -f deploy/docker-compose.yml up -d --bui
 echo "Pruning dangling Docker images..."
 docker image prune -f
 
-# Run Health Check verification
-echo "Waiting for health check verification..."
-MAX_ATTEMPTS=15
-ATTEMPT=1
-while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-    echo "Checking health status (Attempt $ATTEMPT/$MAX_ATTEMPTS)..."
-    STATUS=$(docker inspect --format='{{json .State.Health.Status}}' inscribe-app 2>/dev/null || echo '"unhealthy"')
-    if [ "$STATUS" == '"healthy"' ]; then
-        # Configure host Nginx if present
-        NGINX_CONFIGURED=false
-        if [ -d "/etc/nginx/sites-available" ]; then
-            echo ""
-            read -rp "Detected host Nginx. Do you want to automatically configure an Nginx virtual host for $USER_DOMAIN? [y/N]: " CONF_NGINX
-            CONF_NGINX=${CONF_NGINX:-n}
-            if [[ "$CONF_NGINX" =~ ^[Yy]$ ]]; then
-                NGINX_CONF="/etc/nginx/sites-available/inscribe.conf"
-                echo "Creating Nginx configuration at $NGINX_CONF..."
-                
-                # Check for existing Let's Encrypt certificates
-                SSL_CERT="/etc/letsencrypt/live/$USER_DOMAIN/fullchain.pem"
-                SSL_KEY="/etc/letsencrypt/live/$USER_DOMAIN/privkey.pem"
-                
-                if [ ! -f "$SSL_CERT" ]; then
-                    SSL_CERT="/etc/ssl/certs/inscribe-$USER_DOMAIN.crt"
-                    SSL_KEY="/etc/ssl/private/inscribe-$USER_DOMAIN.key"
-                    if [ ! -f "$SSL_CERT" ]; then
-                        echo "Generating self-signed SSL certificate fallback (for Cloudflare / test)..."
-                        sudo mkdir -p /etc/ssl/certs /etc/ssl/private
-                        sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-                            -keyout "$SSL_KEY" \
-                            -out "$SSL_CERT" \
-                            -subj "/CN=$USER_DOMAIN/O=Inscribe/C=US" &>/dev/null
-                    fi
-                fi
-                
-                sudo tee "$NGINX_CONF" > /dev/null <<EOF
+# Configure host Nginx if present
+NGINX_CONFIGURED=false
+if [ -d "/etc/nginx/sites-available" ]; then
+    echo ""
+    read -rp "Detected host Nginx. Do you want to automatically configure an Nginx virtual host for $USER_DOMAIN? [y/N]: " CONF_NGINX
+    CONF_NGINX=${CONF_NGINX:-n}
+    if [[ "$CONF_NGINX" =~ ^[Yy]$ ]]; then
+        NGINX_CONF="/etc/nginx/sites-available/inscribe.conf"
+        echo "Creating initial HTTP Nginx configuration at $NGINX_CONF..."
+        
+        sudo tee "$NGINX_CONF" > /dev/null <<EOF
 server {
     listen 80;
+    listen [::]:80;
     server_name $USER_DOMAIN;
-    return 301 https://\$host\$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name $USER_DOMAIN;
-
-    ssl_certificate $SSL_CERT;
-    ssl_certificate_key $SSL_KEY;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
-
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
-    ssl_session_tickets off;
-
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-
-    client_max_body_size 4m;
-    client_body_timeout 15s;
-    client_header_timeout 15s;
-    send_timeout 15s;
-    keepalive_timeout 65s;
-    keepalive_requests 200;
-
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript;
-    gzip_proxied any;
-    gzip_comp_level 5;
-    gzip_min_length 256;
-    gzip_vary on;
-
-    location /_next/static/ {
-        proxy_pass http://127.0.0.1:$USER_PORT;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        expires 365d;
-        add_header Cache-Control "public, max-age=31536000, immutable";
-    }
-
-    location /admin/login {
-        proxy_pass http://127.0.0.1:$USER_PORT;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-Host \$host;
-    }
-
-    location /api/search {
-        proxy_pass http://127.0.0.1:$USER_PORT;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
 
     location / {
         proxy_pass http://127.0.0.1:$USER_PORT;
@@ -340,30 +256,57 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-Host \$host;
-        proxy_set_header X-Forwarded-Port \$server_port;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_buffers 8 16k;
-        proxy_buffer_size 32k;
-        proxy_connect_timeout 10s;
-        proxy_send_timeout 30s;
-        proxy_read_timeout 30s;
+    }
+
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:$USER_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        expires 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
     }
 }
 EOF
-                sudo ln -sf "$NGINX_CONF" "/etc/nginx/sites-enabled/inscribe.conf"
-                echo "Testing Nginx configuration..."
-                if sudo nginx -t &>/dev/null; then
-                    echo "Reloading Nginx..."
-                    sudo systemctl reload nginx || sudo service nginx reload &>/dev/null || true
-                    NGINX_CONFIGURED=true
-                    echo "Nginx successfully configured!"
-                else
-                    echo "WARNING: Nginx configuration test failed. Please check $NGINX_CONF manually."
+        sudo ln -sf "$NGINX_CONF" "/etc/nginx/sites-enabled/inscribe.conf"
+        echo "Testing Nginx configuration..."
+        if sudo nginx -t &>/dev/null; then
+            echo "Reloading Nginx..."
+            sudo systemctl reload nginx || sudo service nginx reload &>/dev/null || true
+            NGINX_CONFIGURED=true
+            echo "HTTP Nginx site successfully configured and activated!"
+
+            # Auto Certbot Integration
+            if command -v certbot &> /dev/null; then
+                echo ""
+                read -rp "Certbot (Let's Encrypt) detected! Do you want to automatically get an SSL certificate and configure HTTPS? [Y/n]: " RUN_CERTBOT
+                RUN_CERTBOT=${RUN_CERTBOT:-y}
+                if [[ "$RUN_CERTBOT" =~ ^[Yy]$ ]]; then
+                    echo "Running Certbot for $USER_DOMAIN..."
+                    sudo certbot --nginx -d "$USER_DOMAIN"
                 fi
             fi
+        else
+            echo "WARNING: Nginx configuration test failed. Please check $NGINX_CONF manually."
         fi
+    fi
+fi
+
+# Run Health Check verification
+echo ""
+echo "Waiting for health check verification..."
+MAX_ATTEMPTS=15
+ATTEMPT=1
+while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+    echo "Checking health status (Attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+    STATUS=$(docker inspect --format='{{json .State.Health.Status}}' inscribe-app 2>/dev/null || echo '"unhealthy"')
+    if [ "$STATUS" == '"healthy"' ]; then
+        break
+    fi
+    sleep 5
+    ATTEMPT=$((ATTEMPT + 1))
+done
 
         echo "===================================================="
         echo "SUCCESS: Inscribe Documentation Platform is fully healthy!"
