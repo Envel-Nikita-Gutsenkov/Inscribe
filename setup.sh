@@ -126,7 +126,7 @@ RESET_DATA=${RESET_DATA:-n}
 if [[ "$RESET_DATA" =~ ^[Yy]$ ]]; then
     echo "Resetting configurations and database..."
     rm -f "$ENV_FILE"
-    rm -f deploy/.env
+    rm -f .env
     rm -rf data/
     INSCRIBE_PORT=$CURRENT_PORT docker compose -f deploy/docker-compose.yml down -v --remove-orphans &>/dev/null || true
     CURRENT_PORT=3000
@@ -217,7 +217,7 @@ INSCRIBE_INITIAL_ADMIN_ONE_TIME_CODE=$INITIAL_ADMIN_ONE_TIME_CODE
 EOF
 fi
 
-echo "INSCRIBE_PORT=$USER_PORT" > deploy/.env
+echo "INSCRIBE_PORT=$USER_PORT" > .env
 
 echo "Configurations successfully saved to $ENV_FILE."
 echo "Port: $USER_PORT"
