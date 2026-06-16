@@ -164,6 +164,7 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
               <SegmentedControl
                 options={[
                   { value: "sans",  label: "Sans" },
+                  { value: "noto",  label: "Noto" },
                   { value: "mono",  label: "Mono" },
                   { value: "serif", label: "Serif" },
                 ]}

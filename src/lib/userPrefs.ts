@@ -5,7 +5,7 @@ export interface UserPrefs {
   theme: "dark" | "light" | "system";
   fontSize: number;
   zoom: number;
-  editorFont: "sans" | "mono" | "serif";
+  editorFont: string;
   reducedMotion: boolean;
   compactMode: boolean;
   highlightColor: string;
@@ -17,7 +17,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   theme: "dark",
   fontSize: 15,
   zoom: 100,
-  editorFont: "sans",
+  editorFont: "noto",
   reducedMotion: false,
   compactMode: false,
   highlightColor: "#3b82f6",
@@ -70,6 +70,7 @@ export function applyPrefs(prefs: UserPrefs) {
 
   const fontMap: Record<string, string> = {
     sans:  "'Plus Jakarta Sans', system-ui, sans-serif",
+    noto:  "'Noto Sans', system-ui, sans-serif",
     mono:  "'Courier New', 'Cascadia Code', monospace",
     serif: "Georgia, 'Times New Roman', serif",
   };
