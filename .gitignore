@@ -46,6 +46,6 @@ next-env.d.ts
 *.sqlite-wal
 *.sqlite-shm
 *.db
-backups/
+/data/backups/
 
 src/lib/build-info.json

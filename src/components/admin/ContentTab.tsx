@@ -29,6 +29,8 @@ import OutlineSidebar from "./content/OutlineSidebar";
 import RevisionHistory from "./content/RevisionHistory";
 import EditorWorkspace from "./content/EditorWorkspace";
 import { ImagePickerModal } from "./ImagePickerModal";
+import { PromptModal } from "./PromptModal";
+import { useContentActions } from "./content/useContentActions";
 
 interface ContentTabProps {
   project: Project;
@@ -58,6 +60,18 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const {
+    promptConfig,
+    handleAddSection,
+    handleRenameSection,
+    handleDeleteSection,
+    handleMoveSection,
+    handleAddArticle,
+    handleRenameArticle,
+    handleDeleteArticle,
+    handleMoveArticle,
+  } = useContentActions(project.slug, toc, setToc, activeArticle, setActiveArticle);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -194,127 +208,6 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
         alert(res.error || "Failed to rollback article version");
       }
     }
-  };
-
-  const handleSaveToc = async (newToc: Section[]) => {
-    const res = await saveProjectTocAction(project.slug, newToc);
-    if (res.success) {
-      setToc(newToc);
-    } else {
-      alert(res.error || "Failed to update navigation outline");
-    }
-  };
-
-  const handleAddSection = () => {
-    const title = prompt("Enter section name:");
-    if (!title || !title.trim()) return;
-
-    const newSection: Section = {
-      id: "sec-" + Math.random().toString(36).substring(2, 9),
-      title: title.trim(),
-      articles: []
-    };
-
-    handleSaveToc([...toc, newSection]);
-  };
-
-  const handleRenameSection = (id: string, currentTitle: string) => {
-    const newTitle = prompt("Enter new section name:", currentTitle);
-    if (!newTitle || !newTitle.trim() || newTitle === currentTitle) return;
-
-    const updated = toc.map((s) => (s.id === id ? { ...s, title: newTitle.trim() } : s));
-    handleSaveToc(updated);
-  };
-
-  const handleDeleteSection = (id: string, title: string) => {
-    if (confirm(`Are you sure you want to delete section "${title}"? This deletes all articles in it.`)) {
-      handleSaveToc(toc.filter((s) => s.id !== id));
-      const section = toc.find((s) => s.id === id);
-      if (section && activeArticle) {
-        if (section.articles.some((a) => a.slug === activeArticle.slug)) {
-          setActiveArticle(null);
-        }
-      }
-    }
-  };
-
-  const handleMoveSection = (index: number, direction: "up" | "down") => {
-    const newToc = [...toc];
-    const targetIdx = direction === "up" ? index - 1 : index + 1;
-    if (targetIdx < 0 || targetIdx >= newToc.length) return;
-
-    const temp = newToc[index];
-    newToc[index] = newToc[targetIdx];
-    newToc[targetIdx] = temp;
-    handleSaveToc(newToc);
-  };
-
-  const handleAddArticle = (sectionId: string) => {
-    const title = prompt("Enter article name:");
-    if (!title || !title.trim()) return;
-
-    const autoSlug = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    const slug = prompt("Verify URL slug path:", autoSlug);
-    if (!slug || !slug.trim()) return;
-
-    const finalSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
-    if (toc.some((s) => s.articles.some((a) => a.slug === finalSlug))) {
-      alert("An article with this URL slug path already exists!");
-      return;
-    }
-
-    const newArticle: ArticleRef = { slug: finalSlug, title: title.trim(), isPublished: false };
-    const updated = toc.map((s) => s.id === sectionId ? { ...s, articles: [...s.articles, newArticle] } : s);
-    
-    handleSaveToc(updated);
-    setActiveArticle(newArticle);
-  };
-
-  const handleRenameArticle = (sectionId: string, oldSlug: string, currentTitle: string) => {
-    const newTitle = prompt("Enter new article name:", currentTitle);
-    if (!newTitle || !newTitle.trim() || newTitle === currentTitle) return;
-
-    const updated = toc.map((s) => {
-      if (s.id === sectionId) {
-        return {
-          ...s,
-          articles: s.articles.map((a) => a.slug === oldSlug ? { ...a, title: newTitle.trim() } : a)
-        };
-      }
-      return s;
-    });
-
-    handleSaveToc(updated);
-    if (activeArticle && activeArticle.slug === oldSlug) {
-      setActiveArticle({ ...activeArticle, title: newTitle.trim() });
-    }
-  };
-
-  const handleDeleteArticle = (sectionId: string, slug: string, title: string) => {
-    if (confirm(`Are you sure you want to delete article "${title}"?`)) {
-      const updated = toc.map((s) => s.id === sectionId ? { ...s, articles: s.articles.filter((a) => a.slug !== slug) } : s);
-      handleSaveToc(updated);
-      if (activeArticle && activeArticle.slug === slug) {
-        setActiveArticle(null);
-      }
-    }
-  };
-
-  const handleMoveArticle = (sectionId: string, artIndex: number, direction: "up" | "down") => {
-    const updated = toc.map((s) => {
-      if (s.id === sectionId) {
-        const articles = [...s.articles];
-        const targetIdx = direction === "up" ? artIndex - 1 : artIndex + 1;
-        if (targetIdx < 0 || targetIdx >= articles.length) return s;
-
-        const temp = articles[artIndex];
-        articles[artIndex] = articles[targetIdx];
-        articles[targetIdx] = temp;
-        return { ...s, articles };
-      }
-      return s;
-    });
-    handleSaveToc(updated);
   };
 
   return (
@@ -539,6 +432,8 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
           }}
         />
       )}
+
+      <PromptModal {...promptConfig} />
     </div>
   );
 }

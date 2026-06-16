@@ -427,16 +427,16 @@ export default function UserManager({ initialUsers, projects }: UserManagerProps
             </p>
             
             <div style={{
-              background: "rgba(0,0,0,0.3)",
+              background: "var(--bg-input)",
               padding: "16px",
               borderRadius: "6px",
               border: "1px solid var(--border-color)",
               fontFamily: "monospace",
-              fontSize: "1.6rem",
+              fontSize: "1.8rem",
               fontWeight: "bold",
-              color: "#e5c07b",
+              color: "var(--accent-cyan)",
               marginBottom: "24px",
-              letterSpacing: "0.1em",
+              letterSpacing: "0.15em",
               userSelect: "all"
             }}>
               {oneTimeCodeResult}
@@ -485,14 +485,15 @@ export default function UserManager({ initialUsers, projects }: UserManagerProps
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: "12px",
-              background: "rgba(0, 0, 0, 0.25)",
+              background: "var(--bg-input)",
               border: "1px solid var(--border-color)",
               borderRadius: "8px",
               padding: "20px",
               fontFamily: "monospace",
               fontSize: "1.1rem",
-              color: "#e5c07b",
-              marginBottom: "24px"
+              color: "var(--accent-cyan)",
+              marginBottom: "24px",
+              fontWeight: "bold"
             }}>
               {regeneratedCodes.map((code) => (
                 <div key={code} style={{ padding: "4px 0", userSelect: "all", textAlign: "center" }}>

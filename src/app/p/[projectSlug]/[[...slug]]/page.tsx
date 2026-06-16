@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize from "rehype-sanitize";
-import { Lock } from "lucide-react";
+import { Lock, FileText } from "lucide-react";
 import Mermaid from "@/components/Mermaid";
 
 function getRawText(children: any, depth = 0, visited = new Set()): string {
@@ -192,6 +192,25 @@ export default async function ArticlePage({ params }: PageProps) {
           </div>
         );
       }
+    }
+    if (toc.length === 0) {
+      return (
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "50vh",
+          textAlign: "center",
+          color: "var(--text-muted)"
+        }}>
+          <FileText size={48} style={{ opacity: 0.5, marginBottom: "16px" }} />
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", color: "var(--text-primary)", marginBottom: "8px" }}>
+            Project is empty
+          </h2>
+          <p>This documentation workspace has no published articles yet.</p>
+        </div>
+      );
     }
     notFound();
   }

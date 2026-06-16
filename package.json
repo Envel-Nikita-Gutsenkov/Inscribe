@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
+    "test": "node scripts/check-file-length.mjs && vitest run",
     "test:watch": "vitest",
     "db:reset": "node scripts/reset-db.js"
   },

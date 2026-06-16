@@ -43,6 +43,7 @@ export async function createProjectAction(
     };
 
     saveProject(newProject);
+    revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath(`/p/${slug}`);
     return { success: true };
@@ -71,6 +72,7 @@ export async function updateProjectSettingsAction(
 
 
     saveProject(projectParse.data, oldSlug);
+    revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath(`/admin/projects/${projectParse.data.slug}`);
     revalidatePath(`/p/${projectParse.data.slug}`);
@@ -90,6 +92,7 @@ export async function deleteProjectAction(slug: string): Promise<{ success: bool
     }
 
     deleteProject(slug);
+    revalidatePath("/");
     revalidatePath("/admin");
     return { success: true };
   } catch (err: any) {

@@ -5,6 +5,7 @@ import { Project } from "@/lib/db";
 import { updateProjectSettingsAction, deleteProjectAction } from "@/app/actions/projectActions";
 import { useRouter } from "next/navigation";
 import { Save, Trash2, AlertTriangle, HelpCircle } from "lucide-react";
+import { PromptModal } from "./PromptModal";
 
 interface GeneralSettingsTabProps {
   project: Project;
@@ -27,6 +28,16 @@ export default function GeneralSettingsTab({ project, setProject, isSuper }: Gen
   const [isPending, setIsPending] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
+
+  const [promptConfig, setPromptConfig] = useState({
+    isOpen: false,
+    title: "",
+    description: "",
+    defaultValue: "",
+    onConfirm: (val: string) => {},
+    onCancel: () => {}
+  });
+  const closePrompt = () => setPromptConfig(prev => ({ ...prev, isOpen: false }));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,21 +72,29 @@ export default function GeneralSettingsTab({ project, setProject, isSuper }: Gen
   const handleDelete = async () => {
     if (!isSuper) return;
     
-    const confirmName = prompt(`WARNING: This action is irreversible. It will delete all sections, articles and configurations for this project.\n\nPlease type the project slug "${project.slug}" to confirm deletion:`);
-    
-    if (confirmName === project.slug) {
-      setIsDeleting(true);
-      const res = await deleteProjectAction(project.slug);
-      if (res.success) {
-        router.push("/admin");
-        router.refresh();
-      } else {
-        setIsDeleting(false);
-        alert(res.error || "Failed to delete project");
-      }
-    } else if (confirmName !== null) {
-      alert("Verification slug did not match. Deletion cancelled.");
-    }
+    setPromptConfig({
+      isOpen: true,
+      title: "Delete Project",
+      description: `WARNING: This action is irreversible. It will delete all sections, articles and configurations for this project.\n\nPlease type the project slug "${project.slug}" to confirm deletion:`,
+      defaultValue: "",
+      onConfirm: async (confirmName: string) => {
+        closePrompt();
+        if (confirmName === project.slug) {
+          setIsDeleting(true);
+          const res = await deleteProjectAction(project.slug);
+          if (res.success) {
+            router.push("/admin");
+            router.refresh();
+          } else {
+            setIsDeleting(false);
+            alert(res.error || "Failed to delete project");
+          }
+        } else {
+          alert("Verification slug did not match. Deletion cancelled.");
+        }
+      },
+      onCancel: closePrompt
+    });
   };
 
   return (
@@ -323,6 +342,8 @@ export default function GeneralSettingsTab({ project, setProject, isSuper }: Gen
           </div>
         </div>
       )}
+
+      <PromptModal {...promptConfig} />
     </div>
   );
 }
