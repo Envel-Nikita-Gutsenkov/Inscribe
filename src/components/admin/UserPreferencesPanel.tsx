@@ -106,9 +106,6 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", fontWeight: 700 }}>
               Preferences
             </h2>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "2px" }}>
-              Stored locally · never sent to server
-            </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {saved && (

@@ -527,7 +527,8 @@ body.fullscreen-editor-active .sidebar {
 
 /* Code Syntax & Markdown styling */
 .markdown-body {
-  font-family: var(--font-sans);
+  font-family: var(--user-editor-font, var(--font-sans));
+  font-size: var(--user-font-size, 1rem);
   color: var(--text-primary);
 }
 .markdown-body h1, .markdown-body h2, .markdown-body h3 {
@@ -677,4 +678,25 @@ input:checked + .slider:before {
   }
 }
 
+/* User Preferences Overrides */
+[data-reduced-motion="true"] * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
 
+[data-compact="true"] {
+  --sidebar-width: 240px;
+  --header-height: 52px;
+}
+
+[data-compact="true"] .card {
+  padding: 16px;
+}
+
+[data-compact="true"] .markdown-body h1, 
+[data-compact="true"] .markdown-body h2, 
+[data-compact="true"] .markdown-body h3 {
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
