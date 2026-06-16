@@ -235,7 +235,7 @@ docker image prune -f
 
 # Run Health Check verification
 echo "Waiting for health check verification..."
-MAX_ATTEMPTS=6
+MAX_ATTEMPTS=15
 ATTEMPT=1
 while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
     echo "Checking health status (Attempt $ATTEMPT/$MAX_ATTEMPTS)..."
