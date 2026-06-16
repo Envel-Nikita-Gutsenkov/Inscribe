@@ -1,0 +1,44 @@
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.
+
+Preamble
+
+The GNU Affero General Public License is a free, copyleft license for
+software and other kinds of works, specifically designed to ensure
+cooperation with the community in the case of network server software.
+
+This project, Inscribe, is licensed under the GNU Affero General Public
+License v3.0 (AGPLv3).
+
+Under this license, you are free to:
+- Use the software for any purpose (including commercial use).
+- Modify the software to suit your needs.
+- Distribute copies of the software or your modifications.
+
+However, you must comply with the following conditions:
+- **Share Alike / Disclose Source**: If you distribute the software or modify it, you must make the source code available under the same AGPLv3 license.
+- **Network Use is Distribution**: If you run a modified version of this software on a server and let other users interact with it over a network (e.g., as a SaaS), you MUST offer them the corresponding source code of your modified version.
+- **State Changes**: You must state clearly what changes you made and when.
+- **Include License**: You must include a copy of this license and the original copyright notices.
+
+The full, legally binding text of the GNU Affero General Public License v3.0
+can be found online at: https://www.gnu.org/licenses/agpl-3.0.txt
+
+====================================================================
+THIRD-PARTY LICENSES
+====================================================================
+
+1. Fonts (Outfit & Plus Jakarta Sans)
+This repository includes the "Outfit" and "Plus Jakarta Sans" fonts, which are licensed under the SIL Open Font License, Version 1.1.
+You may read the full text of the SIL Open Font License at:
+https://scripts.sil.org/OFL
+
+2. Icons & Dependencies
+- Lucide Icons: Licensed under the ISC License.
+- Next.js & React: Licensed under the MIT License.
+- SQLite (better-sqlite3): MIT License.
+- All other NPM dependencies retain their respective open-source licenses (MIT/ISC/Apache 2.0).

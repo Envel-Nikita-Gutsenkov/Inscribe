@@ -1,0 +1,62 @@
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 4px;
+  border-radius: 9999px;
+  width: 110px;
+  height: 36px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggleContainer:hover {
+  border-color: var(--accent-purple);
+  box-shadow: var(--shadow-glow);
+}
+
+.slider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  bottom: 3px;
+  width: calc(50% - 3px);
+  background: var(--accent-purple);
+  border-radius: 9999px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  box-shadow: var(--shadow-glow);
+}
+
+.sliderLight {
+  transform: translateX(0);
+  background: #f59e0b; /* Golden Amber Sun color */
+}
+
+.sliderDark {
+  transform: translateX(100%);
+  background: var(--accent-purple); /* Soft Blue/Indigo Moon color */
+}
+
+.iconWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  height: 100%;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.activeLight .lightIcon {
+  color: #fff;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+}
+
+.activeDark .darkIcon {
+  color: #fff;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+}
