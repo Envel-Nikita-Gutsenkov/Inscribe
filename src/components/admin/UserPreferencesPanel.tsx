@@ -86,7 +86,7 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
           borderRadius: "20px",
           width: "460px",
           maxHeight: "90vh",
-          overflowY: "auto",
+          overflow: "hidden",
           boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
           display: "flex",
           flexDirection: "column",
@@ -97,9 +97,7 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
           display: "flex", justifyContent: "space-between", alignItems: "center",
           padding: "24px 28px 20px",
           borderBottom: "1px solid var(--border-color)",
-          position: "sticky", top: 0,
           background: "var(--bg-secondary)",
-          borderRadius: "20px 20px 0 0",
           zIndex: 1,
         }}>
           <div>
@@ -121,7 +119,7 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
         </div>
 
         {/* Body */}
-        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: "28px" }}>
+        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: "28px", overflowY: "auto", overscrollBehavior: "contain", flex: 1 }}>
 
           <Section icon={<Palette size={14} />} title="Appearance">
             <SettingRow label="Theme">
@@ -162,7 +160,7 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
                 onChange={(v) => handleChange("fontSize", v)} />
             </SettingRow>
 
-            <SettingRow label="Editor Font">
+            <SettingRow label="App Font">
               <SegmentedControl
                 options={[
                   { value: "sans",  label: "Sans" },
