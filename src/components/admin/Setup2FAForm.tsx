@@ -80,13 +80,14 @@ export default function Setup2FAForm({ secret, uri, username }: Setup2FAFormProp
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: "12px",
-          background: "rgba(0, 0, 0, 0.25)",
+          background: "var(--bg-input)",
           border: "1px solid var(--border-color)",
           borderRadius: "8px",
           padding: "20px",
           fontFamily: "monospace",
           fontSize: "1.1rem",
-          color: "#e5c07b",
+          fontWeight: 600,
+          color: "var(--editor-text)",
           marginBottom: "24px"
         }}>
           {recoveryCodes.map((code) => (
