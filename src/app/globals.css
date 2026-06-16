@@ -280,6 +280,12 @@
   --bg-color: var(--bg-primary);
   --accent-primary: var(--accent-purple);
 
+  /* Badge colors - Dark Mode */
+  --badge-success-bg: rgba(16, 185, 129, 0.15);
+  --badge-success-color: #34d399;
+  --badge-secondary-bg: rgba(156, 163, 175, 0.15);
+  --badge-secondary-color: #d1d5db;
+
   /* Diff colors - Dark Mode */
   --diff-added-bg: rgba(16, 185, 129, 0.18);
   --diff-added-text: #34d399;
@@ -318,6 +324,12 @@
   --bg-panel: var(--bg-secondary);
   --bg-color: #ffffff;
   --accent-primary: var(--accent-purple);
+
+  /* Badge colors - Light Mode */
+  --badge-success-bg: rgba(16, 185, 129, 0.12);
+  --badge-success-color: #059669;
+  --badge-secondary-bg: rgba(100, 116, 139, 0.12);
+  --badge-secondary-color: #475569;
 
   /* Diff colors - Light Mode */
   --diff-added-bg: #e6f9ed;
@@ -598,12 +610,12 @@ body.fullscreen-editor-active .sidebar {
   text-transform: uppercase;
 }
 .badge-success {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+  background: var(--badge-success-bg);
+  color: var(--badge-success-color);
 }
 .badge-secondary {
-  background: rgba(156, 163, 175, 0.15);
-  color: #d1d5db;
+  background: var(--badge-secondary-bg);
+  color: var(--badge-secondary-color);
 }
 
 /* Grid & Layout System */
