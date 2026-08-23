@@ -44,6 +44,8 @@ export interface Translations {
     protectedBadge: string;
     invalidCredentials: string;
     accessGranted: string;
+    lockProject: string;
+    lockProjectTooltip: string;
   };
   search: {
     placeholder: string;
@@ -115,6 +117,8 @@ export const translations: Record<Locale, Translations> = {
       protectedBadge: "Protected",
       invalidCredentials: "Invalid username or password.",
       accessGranted: "Access granted.",
+      lockProject: "Lock project",
+      lockProjectTooltip: "Forget passcode and lock this project on this device",
     },
     search: {
       placeholder: "Search documentation...",
@@ -184,6 +188,8 @@ export const translations: Record<Locale, Translations> = {
       protectedBadge: "Защищено",
       invalidCredentials: "Неверный логин или пароль.",
       accessGranted: "Доступ разрешен.",
+      lockProject: "Заблокировать проект",
+      lockProjectTooltip: "Сбросить пароль и заблокировать проект на этом устройстве",
     },
     search: {
       placeholder: "Поиск по документации...",

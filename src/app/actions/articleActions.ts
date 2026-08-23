@@ -225,4 +225,33 @@ export async function verifySectionLoginAction(
   }
 }
 
+export async function logoutProjectPasscodeAction(
+  projectSlug: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    cookieStore.delete(`passcode_${projectSlug}`);
+    revalidatePath(`/p/${projectSlug}`);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function logoutSectionAuthAction(
+  projectSlug: string,
+  sectionId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    cookieStore.delete(`sec_auth_${sectionId}`);
+    revalidatePath(`/p/${projectSlug}`);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 

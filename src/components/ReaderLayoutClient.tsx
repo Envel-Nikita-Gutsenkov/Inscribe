@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from "react";
 import SidebarSearch from "@/components/SidebarSearch";
 import { Sidebar } from "@/components/Sidebar";
-import { Menu } from "lucide-react";
+import { Menu, Lock, LogOut } from "lucide-react";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { applyPrefs, loadPrefs } from "@/lib/userPrefs";
+import { getDictionary } from "@/lib/i18n";
+import { logoutProjectPasscodeAction } from "@/app/actions/articleActions";
 
 interface Section {
   id: string;
@@ -23,6 +25,7 @@ interface ReaderLayoutClientProps {
     name: string;
     description: string | null;
     customDomain: string | null;
+    isPrivateUnlocked?: boolean;
   };
   projects: Array<{
     slug: string;
@@ -35,6 +38,15 @@ interface ReaderLayoutClientProps {
 
 export default function ReaderLayoutClient({ project, projects, toc, locale, children }: ReaderLayoutClientProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isLocking, setIsLocking] = useState(false);
+  const dict = getDictionary(locale);
+
+  const handleLockProject = async () => {
+    if (isLocking) return;
+    setIsLocking(true);
+    await logoutProjectPasscodeAction(project.slug);
+    window.location.reload();
+  };
 
   // Apply saved preferences immediately on mount
   useEffect(() => {
@@ -131,7 +143,7 @@ export default function ReaderLayoutClient({ project, projects, toc, locale, chi
           <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-primary)" }}>
             <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>{project.name}</span>
           </div>
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {project.customDomain && (
               <span style={{
                 fontSize: "0.8rem",
@@ -142,6 +154,38 @@ export default function ReaderLayoutClient({ project, projects, toc, locale, chi
               }}>
                 {project.customDomain}
               </span>
+            )}
+
+            {project.isPrivateUnlocked && (
+              <button
+                onClick={handleLockProject}
+                disabled={isLocking}
+                title={dict.reader.lockProjectTooltip}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "0.8rem",
+                  color: "var(--text-secondary)",
+                  background: "var(--bg-secondary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "6px",
+                  padding: "4px 10px",
+                  cursor: isLocking ? "not-allowed" : "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--accent-rose)";
+                  e.currentTarget.style.color = "var(--accent-rose)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }}
+              >
+                <Lock size={14} />
+                <span>{dict.reader.lockProject}</span>
+              </button>
             )}
           </div>
         </header>

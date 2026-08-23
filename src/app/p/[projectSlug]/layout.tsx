@@ -28,11 +28,14 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
       name: p.name,
     }));
 
+  const isPrivateUnlocked = Boolean(!project.isPublic && project.passcode && hasAccess);
+
   const formattedProject = {
     slug: project.slug,
     name: project.name,
     description: project.description ?? null,
     customDomain: project.customDomain ?? null,
+    isPrivateUnlocked,
   };
 
   const { getSystemSetting } = await import("@/lib/db");
