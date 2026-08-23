@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import path from "path";
 import fs from "fs";
 import { 
@@ -19,6 +19,15 @@ import { saveProjectToc, saveArticleContent, publishArticle, getArticleContent }
 describe("Full System Backup & Restore with Images & Database", () => {
   const projectSlug = "backup-test-project";
   const imagesDir = path.join(process.cwd(), "public", "images");
+
+  afterAll(() => {
+    try {
+      const sample = path.join(imagesDir, "test-backup-sample.webp");
+      if (fs.existsSync(sample)) {
+        fs.unlinkSync(sample);
+      }
+    } catch {}
+  });
 
   beforeEach(() => {
     saveProject({
