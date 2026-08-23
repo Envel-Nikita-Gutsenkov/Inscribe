@@ -231,7 +231,13 @@ export async function logoutProjectPasscodeAction(
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
-    cookieStore.delete(`passcode_${projectSlug}`);
+    cookieStore.set(`passcode_${projectSlug}`, "", {
+      maxAge: 0,
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
     revalidatePath(`/p/${projectSlug}`);
     return { success: true };
   } catch (err: any) {
@@ -246,7 +252,13 @@ export async function logoutSectionAuthAction(
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
-    cookieStore.delete(`sec_auth_${sectionId}`);
+    cookieStore.set(`sec_auth_${sectionId}`, "", {
+      maxAge: 0,
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
     revalidatePath(`/p/${projectSlug}`);
     return { success: true };
   } catch (err: any) {

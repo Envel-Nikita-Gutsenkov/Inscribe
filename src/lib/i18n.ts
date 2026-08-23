@@ -117,8 +117,8 @@ export const translations: Record<Locale, Translations> = {
       protectedBadge: "Protected",
       invalidCredentials: "Invalid username or password.",
       accessGranted: "Access granted.",
-      lockProject: "Lock project",
-      lockProjectTooltip: "Forget passcode and lock this project on this device",
+      lockProject: "Clear access",
+      lockProjectTooltip: "Clear saved access code on this device",
     },
     search: {
       placeholder: "Search documentation...",
@@ -188,8 +188,8 @@ export const translations: Record<Locale, Translations> = {
       protectedBadge: "Защищено",
       invalidCredentials: "Неверный логин или пароль.",
       accessGranted: "Доступ разрешен.",
-      lockProject: "Заблокировать проект",
-      lockProjectTooltip: "Сбросить пароль и заблокировать проект на этом устройстве",
+      lockProject: "Удалить данные доступа",
+      lockProjectTooltip: "Удалить сохраненный код доступа на этом устройстве",
     },
     search: {
       placeholder: "Поиск по документации...",

@@ -149,11 +149,6 @@ export function verifyPasscodeToken(projectSlug: string, passcodeHash: string, t
 export async function hasProjectPasscodeAccess(projectSlug: string, passcode?: string | null): Promise<boolean> {
   if (!passcode) return true;
 
-  const session = await getSession();
-  if (session && (session.role === "superadmin" || session.projects.includes(projectSlug))) {
-    return true;
-  }
-
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get(`passcode_${projectSlug}`)?.value;
   if (!cookieToken) return false;

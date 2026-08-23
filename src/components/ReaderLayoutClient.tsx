@@ -45,7 +45,7 @@ export default function ReaderLayoutClient({ project, projects, toc, locale, chi
     if (isLocking) return;
     setIsLocking(true);
     await logoutProjectPasscodeAction(project.slug);
-    window.location.reload();
+    window.location.href = `/p/${project.slug}`;
   };
 
   // Apply saved preferences immediately on mount
