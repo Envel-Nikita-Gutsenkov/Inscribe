@@ -241,6 +241,32 @@ const migrations: { [version: number]: (database: Database.Database) => void } =
         value TEXT NOT NULL
       );
     `);
+  },
+  8: (database) => {
+    const hasColumn = (table: string, column: string) => {
+      const info = database.pragma(`table_info(${table})`) as any[];
+      return info.some((col) => col.name === column);
+    };
+
+    if (!hasColumn("sections", "isProtected")) {
+      database.exec("ALTER TABLE sections ADD COLUMN isProtected INTEGER DEFAULT 0;");
+    }
+    if (!hasColumn("sections", "protectionUsername")) {
+      database.exec("ALTER TABLE sections ADD COLUMN protectionUsername TEXT;");
+    }
+    if (!hasColumn("sections", "protectionPassword")) {
+      database.exec("ALTER TABLE sections ADD COLUMN protectionPassword TEXT;");
+    }
+  },
+  9: (database) => {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS rate_limit_attempts (
+        key TEXT PRIMARY KEY,
+        count INTEGER NOT NULL DEFAULT 0,
+        locked_until INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL DEFAULT 0
+      );
+    `);
   }
 };
 
@@ -250,7 +276,8 @@ function seed() {
     INSERT OR IGNORE INTO system_settings (key, value)
     VALUES 
       ('portal_title', 'Welcome to Inscribe'),
-      ('portal_description', 'Search for articles or select a documentation workspace below to get started.')
+      ('portal_description', 'Search for articles or select a documentation workspace below to get started.'),
+      ('site_language', 'en')
   `).run();
 
   const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
@@ -260,16 +287,16 @@ function seed() {
       // Generate a random admin username so every install is unique
       const adjectives = ["swift", "bold", "keen", "calm", "wise", "bright", "sharp", "noble"];
       const nouns = ["falcon", "cedar", "stone", "river", "ember", "coast", "forge", "vale"];
-      const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-      const noun = nouns[Math.floor(Math.random() * nouns.length)];
-      const suffix = Math.floor(1000 + Math.random() * 9000);
+      const adj = adjectives[crypto.randomInt(adjectives.length)];
+      const noun = nouns[crypto.randomInt(nouns.length)];
+      const suffix = crypto.randomInt(1000, 9999);
       username = `${adj}-${noun}-${suffix}`;
     }
 
     let oneTimeCode = process.env.INSCRIBE_INITIAL_ADMIN_ONE_TIME_CODE?.trim();
     if (!oneTimeCode) {
       // Generate a cryptographically random 6-digit numeric one-time code
-      oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
+      oneTimeCode = crypto.randomInt(100000, 1000000).toString();
     }
 
     const userId = "user-" + crypto.randomBytes(6).toString("hex");

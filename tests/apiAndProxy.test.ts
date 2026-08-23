@@ -114,7 +114,8 @@ describe("API Routes & Proxy Rewriting", () => {
 
       const res = await proxy(mockReq);
       expect(res.type).toBe("rewrite");
-      expect(res.url.pathname).toBe("/p/my-custom-slug/installation");
+      const rewrittenUrl = new URL(res.url);
+      expect(rewrittenUrl.pathname).toBe("/p/my-custom-slug/installation");
 
       // Restore fetch
       global.fetch = globalFetch;

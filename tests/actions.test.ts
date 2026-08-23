@@ -144,7 +144,7 @@ describe("Server Actions Tests", () => {
         projects: [],
       });
 
-      const res = await createUserAction("newuser", "editor", "SECRET", []);
+      const res = await createUserAction("newuser", "editor", []);
       expect(res.success).toBe(false);
       expect(res.error).toContain("Superadmin access required");
     });

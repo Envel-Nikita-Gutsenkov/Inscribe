@@ -9,6 +9,8 @@ import ThemeToggle from "./ThemeToggle";
 import { ProjectSelector } from "./ProjectSelector";
 import dynamic from "next/dynamic";
 
+import { getDictionary } from "@/lib/i18n";
+
 const UserPreferencesPanel = dynamic(
   () => import("@/components/admin/UserPreferencesPanel"),
   { ssr: false }
@@ -21,16 +23,18 @@ interface SidebarProps {
   }>;
   currentProjectSlug?: string;
   isOpen?: boolean;
+  locale?: string;
   onClose?: () => void;
   children?: React.ReactNode;
 }
 
-export function Sidebar({ projects, currentProjectSlug, isOpen = true, onClose, children }: SidebarProps) {
+export function Sidebar({ projects, currentProjectSlug, isOpen = true, locale, onClose, children }: SidebarProps) {
   const pathname = usePathname();
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const dict = getDictionary(locale);
 
   const links = [
-    { href: "/", label: "Home", icon: Home },
+    { href: "/", label: dict.common.home, icon: Home },
   ];
 
   return (
@@ -53,7 +57,7 @@ export function Sidebar({ projects, currentProjectSlug, isOpen = true, onClose, 
             <button 
               onClick={onClose}
               className={styles.closeBtn}
-              title="Close menu"
+              title={dict.reader.closeMenu}
             >
               <PanelLeftClose size={18} />
             </button>
@@ -90,7 +94,7 @@ export function Sidebar({ projects, currentProjectSlug, isOpen = true, onClose, 
           onClick={() => setPrefsOpen(true)}
           className={styles.navLink}
           style={{ padding: "8px", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center" }}
-          title="Settings"
+          title={dict.common.settings}
         >
           <Settings size={18} />
         </button>

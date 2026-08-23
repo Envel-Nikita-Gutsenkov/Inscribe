@@ -29,10 +29,11 @@ interface ReaderLayoutClientProps {
     name: string;
   }>;
   toc: Section[];
+  locale?: string;
   children: React.ReactNode;
 }
 
-export default function ReaderLayoutClient({ project, projects, toc, children }: ReaderLayoutClientProps) {
+export default function ReaderLayoutClient({ project, projects, toc, locale, children }: ReaderLayoutClientProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Apply saved preferences immediately on mount
@@ -64,10 +65,11 @@ export default function ReaderLayoutClient({ project, projects, toc, children }:
           projects={projects}
           currentProjectSlug={project.slug}
           isOpen={isSidebarOpen}
+          locale={locale}
           onClose={() => setIsSidebarOpen(false)}
         >
           <ErrorBoundary>
-            <SidebarSearch projectSlug={project.slug} toc={toc} />
+            <SidebarSearch projectSlug={project.slug} toc={toc} locale={locale} />
           </ErrorBoundary>
         </Sidebar>
       </ErrorBoundary>

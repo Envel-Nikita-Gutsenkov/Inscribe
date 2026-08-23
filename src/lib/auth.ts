@@ -30,12 +30,25 @@ export function verifyAndConsumeRecoveryCode(user: User, token: string): boolean
   }
   
   const formattedToken = token.trim().toUpperCase();
-  const hash = crypto.createHash("sha256").update(formattedToken).digest("hex");
+  const inputHash = Buffer.from(crypto.createHash("sha256").update(formattedToken).digest("hex"));
   const hashes = user.recoveryCodes.split(",");
-  const index = hashes.indexOf(hash);
+
+  // Scan all codes in constant time — no early exit on match to prevent timing leaks
+  let matchIndex = -1;
+  for (let i = 0; i < hashes.length; i++) {
+    const storedBuf = Buffer.from(hashes[i]);
+    if (storedBuf.length === inputHash.length) {
+      // timingSafeEqual requires same-length buffers
+      const storedHashBuf = Buffer.from(hashes[i]);
+      const inputHashHex = Buffer.from(inputHash.toString("utf8"));
+      if (crypto.timingSafeEqual(inputHashHex, storedHashBuf)) {
+        matchIndex = i;
+      }
+    }
+  }
   
-  if (index !== -1) {
-    hashes.splice(index, 1);
+  if (matchIndex !== -1) {
+    hashes.splice(matchIndex, 1);
     user.recoveryCodes = hashes.length > 0 ? hashes.join(",") : "";
     saveUser(user);
     return true;

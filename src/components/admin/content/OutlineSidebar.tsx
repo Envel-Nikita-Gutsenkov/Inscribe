@@ -1,8 +1,10 @@
-import React from "react";
-import { FolderPlus, FilePlus, Trash2, Edit, ArrowUp, ArrowDown } from "lucide-react";
+import React, { useState } from "react";
+import { FolderPlus, FilePlus, Trash2, Edit, ArrowUp, ArrowDown, Lock } from "lucide-react";
 import { Section, ArticleRef } from "@/lib/db/types";
+import SectionProtectionModal from "./SectionProtectionModal";
 
 interface OutlineSidebarProps {
+  projectSlug?: string;
   toc: Section[];
   activeArticle: ArticleRef | null;
   onSelectArticle: (art: ArticleRef, sectionId: string) => void;
@@ -14,9 +16,11 @@ interface OutlineSidebarProps {
   onRenameArticle: (sectionId: string, slug: string, title: string) => void;
   onDeleteArticle: (sectionId: string, slug: string, title: string) => void;
   onMoveArticle: (sectionId: string, index: number, dir: "up" | "down") => void;
+  onUpdateToc?: (newToc: Section[]) => void;
 }
 
 export default function OutlineSidebar({
+  projectSlug = "",
   toc,
   activeArticle,
   onSelectArticle,
@@ -28,7 +32,10 @@ export default function OutlineSidebar({
   onRenameArticle,
   onDeleteArticle,
   onMoveArticle,
+  onUpdateToc,
 }: OutlineSidebarProps) {
+  const [protectSection, setProtectSection] = useState<Section | null>(null);
+
   return (
     <div style={{ width: "300px", display: "flex", flexDirection: "column", gap: "16px" }}>
       <div className="flex-between">
@@ -57,14 +64,18 @@ export default function OutlineSidebar({
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid var(--border-color)"
               }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-primary)" }}>
-                  {section.title}
+                <span style={{ fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>{section.title}</span>
+                  {section.isProtected && (
+                    <Lock size={12} style={{ color: "var(--accent-rose)" }} />
+                  )}
                 </span>
                 
                 {/* Section action tools */}
                 <div style={{ display: "flex", gap: "2px" }}>
                   <button onClick={() => onMoveSection(secIdx, "up")} disabled={secIdx === 0} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px" }} title="Move Up"><ArrowUp size={10} /></button>
                   <button onClick={() => onMoveSection(secIdx, "down")} disabled={secIdx === toc.length - 1} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px" }} title="Move Down"><ArrowDown size={10} /></button>
+                  <button onClick={() => setProtectSection(section)} style={{ background: "transparent", border: "none", cursor: "pointer", color: section.isProtected ? "var(--accent-rose)" : "var(--text-muted)", padding: "2px" }} title="Security & Protection"><Lock size={10} /></button>
                   <button onClick={() => onRenameSection(section.id, section.title)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px" }} title="Rename"><Edit size={10} /></button>
                   <button onClick={() => onDeleteSection(section.id, section.title)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--accent-rose)", padding: "2px" }} title="Delete"><Trash2 size={10} /></button>
                 </div>
@@ -140,6 +151,25 @@ export default function OutlineSidebar({
           ))
         )}
       </div>
+
+      {protectSection && (
+        <SectionProtectionModal
+          projectSlug={projectSlug}
+          sectionId={protectSection.id}
+          sectionTitle={protectSection.title}
+          isProtected={protectSection.isProtected}
+          protectionUsername={protectSection.protectionUsername}
+          onClose={() => setProtectSection(null)}
+          onSaved={(isProtected, username) => {
+            const updated = toc.map((s) =>
+              s.id === protectSection.id
+                ? { ...s, isProtected, protectionUsername: username }
+                : s
+            );
+            if (onUpdateToc) onUpdateToc(updated);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, ChevronDown, FileText, Loader } from "lucide-react";
+import { Search, ChevronDown, FileText, Loader, Lock } from "lucide-react";
+import { getDictionary } from "@/lib/i18n";
 
 interface ArticleRef {
   slug: string;
@@ -13,12 +14,14 @@ interface ArticleRef {
 interface Section {
   id: string;
   title: string;
+  isProtected?: boolean;
   articles: ArticleRef[];
 }
 
 interface SidebarSearchProps {
   projectSlug: string;
   toc: Section[];
+  locale?: string;
 }
 
 interface SearchResult {
@@ -27,7 +30,8 @@ interface SearchResult {
   contentSnippet: string;
 }
 
-export default function SidebarSearch({ projectSlug, toc }: SidebarSearchProps) {
+export default function SidebarSearch({ projectSlug, toc, locale }: SidebarSearchProps) {
+  const dict = getDictionary(locale);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -93,7 +97,7 @@ export default function SidebarSearch({ projectSlug, toc }: SidebarSearchProps) 
         <div style={{ position: "relative", width: "100%" }}>
           <input
             type="text"
-            placeholder="Search documentation..."
+            placeholder={dict.search.placeholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -135,12 +139,12 @@ export default function SidebarSearch({ projectSlug, toc }: SidebarSearchProps) 
           /* Search Results Display */
           <div>
             <div style={{ padding: "4px 12px 12px 12px", fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Search Results
+              {dict.search.quickSearch}
             </div>
             
             {searchResults.length === 0 ? (
               <div style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                {isSearching ? "Searching index..." : "No matches found"}
+                {isSearching ? dict.common.loading : `${dict.search.noResults} "${search}"`}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -201,6 +205,9 @@ export default function SidebarSearch({ projectSlug, toc }: SidebarSearchProps) 
               }}>
                 <ChevronDown size={12} />
                 <span>{section.title}</span>
+                {section.isProtected && (
+                  <Lock size={12} style={{ color: "var(--accent-rose)", marginLeft: "auto" }} />
+                )}
               </div>
 
               {/* Section Articles */}

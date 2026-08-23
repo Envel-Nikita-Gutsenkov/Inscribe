@@ -217,6 +217,7 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
         <OutlineSidebar
           toc={toc}
           activeArticle={activeArticle}
+          projectSlug={project.slug}
           onSelectArticle={(art, secId) => {
             if (hasChanges && !confirm("You have unsaved changes. Discard them?")) return;
             setActiveArticle(art);
@@ -230,6 +231,7 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
           onRenameArticle={handleRenameArticle}
           onDeleteArticle={handleDeleteArticle}
           onMoveArticle={handleMoveArticle}
+          onUpdateToc={setToc}
         />
       )}
 
@@ -259,7 +261,7 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
                       background: isConsoleSidebarCollapsed ? "var(--accent-purple)" : "transparent",
                       color: isConsoleSidebarCollapsed ? "#ffffff" : "var(--text-secondary)"
                     }}
-                    title={isConsoleSidebarCollapsed ? "Показать меню консоли" : "Скрыть меню консоли"}
+                    title={isConsoleSidebarCollapsed ? "Show console menu" : "Hide console menu"}
                   >
                     {isConsoleSidebarCollapsed ? <PanelLeft size={14} /> : <PanelLeftClose size={14} />}
                   </button>
@@ -272,7 +274,7 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
                       background: isOutlineSidebarCollapsed ? "var(--accent-purple)" : "transparent",
                       color: isOutlineSidebarCollapsed ? "#ffffff" : "var(--text-secondary)"
                     }}
-                    title={isOutlineSidebarCollapsed ? "Показать навигацию" : "Скрыть навигацию"}
+                    title={isOutlineSidebarCollapsed ? "Show outline" : "Hide outline"}
                   >
                     <Menu size={14} />
                   </button>
@@ -285,7 +287,7 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
                       background: isFullScreenEditor ? "var(--accent-purple)" : "transparent",
                       color: isFullScreenEditor ? "#ffffff" : "var(--text-secondary)"
                     }}
-                    title={isFullScreenEditor ? "Обычный режим" : "На весь экран"}
+                    title={isFullScreenEditor ? "Exit full screen" : "Full screen"}
                   >
                     {isFullScreenEditor ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
                   </button>
@@ -304,10 +306,10 @@ export default function ContentTab({ project, toc, setToc }: ContentTabProps) {
                   onClick={() => setIsImagePickerOpen(true)}
                   className="btn"
                   style={{ padding: "8px 12px", fontSize: "0.85rem" }}
-                  title="Вставить изображение"
+                  title="Insert image"
                 >
                   <ImagePlus size={14} />
-                  <span>Изображение</span>
+                  <span>Insert Image</span>
                 </button>
 
                 <div style={{ display: "flex", background: "var(--bg-input)", borderRadius: "var(--radius-md)", padding: "3px", border: "1px solid var(--border-color)" }}>

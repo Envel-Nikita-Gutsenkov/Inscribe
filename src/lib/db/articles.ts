@@ -61,12 +61,18 @@ const stmtPruneHistoryByCount = db.prepare(`
 const stmtSearchWithProject = db.prepare(`
   SELECT f.projectSlug, f.slug, f.title, snippet(articles_fts, 3, '==', '==', '...', 15) as snippet
   FROM articles_fts f
-  WHERE f.articles_fts MATCH ? AND f.projectSlug = ?
+  JOIN articles a ON a.projectSlug = f.projectSlug AND a.slug = f.slug
+  JOIN sections s ON a.sectionId = s.id
+  JOIN projects p ON p.slug = f.projectSlug
+  WHERE f.articles_fts MATCH ? AND f.projectSlug = ? AND p.isPublic = 1 AND s.isProtected = 0 AND a.isPublished = 1
 `);
 const stmtSearchGlobal = db.prepare(`
   SELECT f.projectSlug, f.slug, f.title, snippet(articles_fts, 3, '==', '==', '...', 15) as snippet
   FROM articles_fts f
-  WHERE f.articles_fts MATCH ?
+  JOIN articles a ON a.projectSlug = f.projectSlug AND a.slug = f.slug
+  JOIN sections s ON a.sectionId = s.id
+  JOIN projects p ON p.slug = f.projectSlug
+  WHERE f.articles_fts MATCH ? AND p.isPublic = 1 AND s.isProtected = 0 AND a.isPublished = 1
 `);
 
 // Helper functions
@@ -97,11 +103,14 @@ const selectCurrentSections = db.prepare("SELECT id FROM sections WHERE projectS
 const deleteSection = db.prepare("DELETE FROM sections WHERE id = ?");
 
 const upsertSection = db.prepare(`
-  INSERT INTO sections (id, projectSlug, title, sortOrder)
-  VALUES (?, ?, ?, ?)
+  INSERT INTO sections (id, projectSlug, title, sortOrder, isProtected, protectionUsername, protectionPassword)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
-    sortOrder = excluded.sortOrder
+    sortOrder = excluded.sortOrder,
+    isProtected = excluded.isProtected,
+    protectionUsername = excluded.protectionUsername,
+    protectionPassword = excluded.protectionPassword
 `);
 
 const selectSectionArticlesSlugs = db.prepare("SELECT slug FROM articles WHERE projectSlug = ? AND sectionId = ?");
@@ -147,6 +156,8 @@ export function getProjectToc(projectSlug: string): Section[] {
     toc.push({
       id: s.id,
       title: s.title,
+      isProtected: Boolean(s.isProtected),
+      protectionUsername: s.protectionUsername || undefined,
       articles: articleRows.map((a) => ({ 
         slug: a.slug, 
         title: a.title,
@@ -158,6 +169,61 @@ export function getProjectToc(projectSlug: string): Section[] {
   tocCache.set(projectSlug, toc);
 
   return toc;
+}
+
+export function getSectionById(sectionId: string): Section | null {
+  const row = db.prepare("SELECT * FROM sections WHERE id = ?").get(sectionId) as any;
+  if (!row) return null;
+  const articleRows = selectSectionArticles.all(row.projectSlug, row.id) as any[];
+  return {
+    id: row.id,
+    title: row.title,
+    isProtected: Boolean(row.isProtected),
+    protectionUsername: row.protectionUsername || undefined,
+    protectionPassword: row.protectionPassword || undefined,
+    articles: articleRows.map((a) => ({
+      slug: a.slug,
+      title: a.title,
+      isPublished: a.isPublished === 1,
+    })),
+  };
+}
+
+export function getArticleSection(projectSlug: string, articleSlug: string): { sectionId: string; isProtected: boolean; protectionUsername?: string; projectSlug: string } | null {
+  const row = db.prepare(`
+    SELECT a.sectionId, a.projectSlug, s.isProtected, s.protectionUsername
+    FROM articles a
+    LEFT JOIN sections s ON a.sectionId = s.id
+    WHERE a.projectSlug = ? AND a.slug = ?
+  `).get(projectSlug, articleSlug) as any;
+  if (!row) return null;
+  return {
+    sectionId: row.sectionId,
+    projectSlug: row.projectSlug,
+    isProtected: Boolean(row.isProtected),
+    protectionUsername: row.protectionUsername || undefined,
+  };
+}
+
+export function verifySectionCredentials(sectionId: string, username?: string, password?: string): boolean {
+  const row = db.prepare("SELECT isProtected, protectionUsername, protectionPassword FROM sections WHERE id = ?").get(sectionId) as any;
+  if (!row || !row.isProtected) return true;
+
+  const storedPass = (row.protectionPassword || "").trim();
+  if (!storedPass) return true;
+
+  // Username check: constant-time to prevent username enumeration via timing
+  if (row.protectionUsername && row.protectionUsername.trim()) {
+    const inputUserHash = crypto.createHash("sha256").update((username || "").trim().toLowerCase()).digest();
+    const storedUserHash = crypto.createHash("sha256").update(row.protectionUsername.trim().toLowerCase()).digest();
+    if (!crypto.timingSafeEqual(inputUserHash, storedUserHash)) return false;
+  }
+
+  // Password is always stored as SHA-256 hex (64 chars) — enforced by updateSectionProtectionAction
+  const inputHash = crypto.createHash("sha256").update((password || "").trim()).digest();
+  const storedBuf = Buffer.from(storedPass, "hex");
+  if (inputHash.length !== storedBuf.length) return false;
+  return crypto.timingSafeEqual(inputHash, storedBuf);
 }
 
 export function saveProjectToc(projectSlug: string, toc: Section[]) {
@@ -177,7 +243,20 @@ export function saveProjectToc(projectSlug: string, toc: Section[]) {
 
     let sectionOrder = 0;
     for (const sec of toc) {
-      const secResult = upsertSection.run(sec.id, projectSlug, sec.title, sectionOrder++);
+      const existingSec = db.prepare("SELECT protectionPassword, protectionUsername, isProtected FROM sections WHERE id = ?").get(sec.id) as any;
+      const isProtected = sec.isProtected !== undefined ? (sec.isProtected ? 1 : 0) : (existingSec ? existingSec.isProtected : 0);
+      const protectionUsername = sec.protectionUsername !== undefined ? (sec.protectionUsername || null) : (existingSec ? existingSec.protectionUsername : null);
+      const protectionPassword = sec.protectionPassword !== undefined ? (sec.protectionPassword || null) : (existingSec ? existingSec.protectionPassword : null);
+
+      const secResult = upsertSection.run(
+        sec.id,
+        projectSlug,
+        sec.title,
+        sectionOrder++,
+        isProtected,
+        protectionUsername,
+        protectionPassword
+      );
       if (secResult.changes > 0) {
         changeDetected = true;
       }
@@ -343,17 +422,21 @@ export function getArticleHistory(projectSlug: string, articleSlug: string): Art
 }
 
 export function searchArticles(query: string, projectSlug?: string): { projectSlug: string; slug: string; title: string; contentSnippet: string }[] {
-  const sanitizedQuery = query.replace(/["]/g, "").trim();
-  if (!sanitizedQuery) return [];
+  try {
+    const sanitizedQuery = query.replace(/[^\p{L}\p{N}\s_-]/gu, " ").replace(/\s+/g, " ").trim();
+    if (!sanitizedQuery) return [];
 
-  const rows = projectSlug
-    ? stmtSearchWithProject.all(`${sanitizedQuery}*`, projectSlug)
-    : stmtSearchGlobal.all(`${sanitizedQuery}*`);
+    const rows = projectSlug
+      ? stmtSearchWithProject.all(`${sanitizedQuery}*`, projectSlug)
+      : stmtSearchGlobal.all(`${sanitizedQuery}*`);
 
-  return (rows as any[]).map((r) => ({
-    projectSlug: r.projectSlug,
-    slug: r.slug,
-    title: r.title,
-    contentSnippet: r.snippet || "",
-  }));
+    return (rows as any[]).map((r) => ({
+      projectSlug: r.projectSlug,
+      slug: r.slug,
+      title: r.title,
+      contentSnippet: r.snippet || "",
+    }));
+  } catch (err) {
+    return [];
+  }
 }

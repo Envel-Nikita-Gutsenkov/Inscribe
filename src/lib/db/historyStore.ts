@@ -204,8 +204,11 @@ export function recordHistory(
   const now = Date.now();
   const last = stmtLastEntry.get(projectSlug, articleSlug);
 
+  const userRow = userId ? db.prepare("SELECT id FROM users WHERE id = ?").get(userId) : null;
+  const validCreatedById = userRow ? userId : null;
+
   // Batch window: same user, within the window → just update the existing entry
-  if (last && (now - last.createdAt) < batchWindowMs && last.createdById === userId) {
+  if (last && (now - last.createdAt) < batchWindowMs && last.createdById === validCreatedById) {
     stmtUpdateContent.run(newContent, changeSummary, 0, last.id);
     return;
   }
@@ -234,7 +237,7 @@ export function recordHistory(
   }
 
   const historyId = "hist-" + crypto.randomBytes(5).toString("hex");
-  stmtInsert.run(historyId, projectSlug, articleSlug, newContent, changeSummary, now, userId, 0);
+  stmtInsert.run(historyId, projectSlug, articleSlug, newContent, changeSummary, now, validCreatedById, 0);
 }
 
 /** Prune old history entries respecting max versions and retention. */

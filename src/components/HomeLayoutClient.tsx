@@ -10,10 +10,11 @@ interface HomeLayoutClientProps {
     slug: string;
     name: string;
   }>;
+  locale?: string;
   children: React.ReactNode;
 }
 
-export function HomeLayoutClient({ projects, children }: HomeLayoutClientProps) {
+export function HomeLayoutClient({ projects, locale, children }: HomeLayoutClientProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
@@ -22,6 +23,7 @@ export function HomeLayoutClient({ projects, children }: HomeLayoutClientProps) 
       <ErrorBoundary>
         <Sidebar 
           projects={projects} 
+          locale={locale}
           isOpen={isSidebarOpen} 
           onClose={() => setIsSidebarOpen(false)} 
         />

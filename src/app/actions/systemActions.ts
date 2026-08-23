@@ -179,3 +179,39 @@ export async function updatePortalSettingsAction(
     return { success: false, error: err.message };
   }
 }
+
+export async function getSiteLanguageAction(): Promise<{
+  success: boolean;
+  language?: string;
+  error?: string;
+}> {
+  try {
+    const { getSystemSetting } = await import("@/lib/db");
+    const language = getSystemSetting("site_language", "en");
+    return { success: true, language };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateSiteLanguageAction(
+  language: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await requireSuperadmin();
+    const lang = language === "ru" ? "ru" : "en";
+    const { setSystemSetting } = await import("@/lib/db");
+    setSystemSetting("site_language", lang);
+
+    const { clearProjectCache } = await import("@/lib/db/projects");
+    const { clearCache } = await import("@/lib/db/articles");
+    clearProjectCache();
+    clearCache();
+    revalidatePath("/", "layout");
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+

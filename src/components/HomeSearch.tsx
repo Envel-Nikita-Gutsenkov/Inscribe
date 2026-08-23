@@ -5,6 +5,8 @@ import { Search, Loader, FileText } from "lucide-react";
 import Link from "next/link";
 import styles from "./HomeSearch.module.css";
 
+import { getDictionary } from "@/lib/i18n";
+
 interface SearchResult {
   projectSlug: string;
   slug: string;
@@ -12,7 +14,12 @@ interface SearchResult {
   contentSnippet: string;
 }
 
-export function HomeSearch() {
+interface HomeSearchProps {
+  locale?: string;
+}
+
+export function HomeSearch({ locale }: HomeSearchProps) {
+  const dict = getDictionary(locale);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -72,7 +79,7 @@ export function HomeSearch() {
           type="text" 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search articles and projects..." 
+          placeholder={dict.search.placeholder} 
           className={styles.searchInput}
         />
       </div>
@@ -96,7 +103,7 @@ export function HomeSearch() {
             ))
           ) : (
             <div className={styles.noResults}>
-              {isSearching ? "Searching..." : "No matches found"}
+              {isSearching ? dict.common.loading : `${dict.search.noResults} "${query}"`}
             </div>
           )}
         </div>

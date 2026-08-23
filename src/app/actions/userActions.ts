@@ -4,6 +4,7 @@ import { getSession, generateTotp, generateRecoveryCodes } from "@/lib/auth";
 import { getUsers, saveUser, deleteUser, User, getUserById } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { userSchema } from "@/lib/validation";
+import crypto from "crypto";
 
 async function requireSuperadmin() {
   const session = await getSession();
@@ -20,9 +21,9 @@ export async function createUserAction(
   try {
     await requireSuperadmin();
 
-    const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const oneTimeCode = crypto.randomInt(100000, 1000000).toString();
     const newUser: User = {
-      id: "user-" + Math.random().toString(36).substring(2, 9),
+      id: crypto.randomUUID(),
       username,
       totpSecret: "PENDING",
       role,
@@ -70,7 +71,7 @@ export async function updateUserAction(
     let recoveryCodes = existing.recoveryCodes;
 
     if (reset2FA) {
-      oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
+      oneTimeCode = crypto.randomInt(100000, 1000000).toString();
       totpSecret = "PENDING";
       recoveryCodes = undefined;
     }

@@ -102,33 +102,33 @@ export default function BackupsManager() {
   };
 
   const handleRestore = async (filename: string) => {
-    if (!confirm(`Вы действительно хотите восстановить базу данных из копии "${filename}"?\n\nТекущие данные будут перезаписаны.`)) {
+    if (!confirm(`Are you sure you want to restore the database from backup "${filename}"?\n\nCurrent data will be overwritten.`)) {
       return;
     }
     setActionPending(true);
     setStatusMsg(null);
     const res = await restoreBackupAction(filename);
     if (res.success) {
-      setStatusMsg({ type: "success", text: `База данных успешно восстановлена из резервной копии: ${filename}` });
+      setStatusMsg({ type: "success", text: `Database restored successfully from backup: ${filename}` });
       fetchBackups();
     } else {
-      setStatusMsg({ type: "error", text: res.error || "Ошибка восстановления базы данных" });
+      setStatusMsg({ type: "error", text: res.error || "Failed to restore database" });
     }
     setActionPending(false);
   };
 
   const handleDelete = async (filename: string) => {
-    if (!confirm(`Удалить файл резервной копии "${filename}"?`)) {
+    if (!confirm(`Delete backup file "${filename}"?`)) {
       return;
     }
     setActionPending(true);
     setStatusMsg(null);
     const res = await deleteBackupAction(filename);
     if (res.success) {
-      setStatusMsg({ type: "success", text: "Резервная копия удалена" });
+      setStatusMsg({ type: "success", text: "Backup file deleted successfully." });
       fetchBackups();
     } else {
-      setStatusMsg({ type: "error", text: res.error || "Ошибка удаления файла" });
+      setStatusMsg({ type: "error", text: res.error || "Failed to delete backup file" });
     }
     setActionPending(false);
   };
@@ -150,13 +150,13 @@ export default function BackupsManager() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setStatusMsg({ type: "success", text: `Резервная копия успешно загружена: ${data.filename}` });
+        setStatusMsg({ type: "success", text: `Backup uploaded successfully: ${data.filename}` });
         fetchBackups();
       } else {
-        setStatusMsg({ type: "error", text: data.error || "Ошибка проверки/загрузки файла" });
+        setStatusMsg({ type: "error", text: data.error || "Invalid backup file or upload failed" });
       }
     } catch (err: any) {
-      setStatusMsg({ type: "error", text: err.message || "Ошибка отправки файла" });
+      setStatusMsg({ type: "error", text: err.message || "Failed to upload file" });
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -179,10 +179,10 @@ export default function BackupsManager() {
       <div className="flex-between" style={{ marginBottom: "40px" }}>
         <div>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2.5rem", fontWeight: 700, letterSpacing: "-0.03em" }}>
-            Резервные копии БД
+            Database Backups
           </h1>
           <p style={{ color: "var(--text-secondary)" }}>
-            Управление копиями базы данных, восстановление, скачивание и автоматические бэкапы
+            Manage database snapshots, restore previous states, download archives, and configure automatic backups.
           </p>
         </div>
 
@@ -203,12 +203,12 @@ export default function BackupsManager() {
             {uploading ? (
               <>
                 <RefreshCw className="spin" size={16} />
-                <span>Загрузка...</span>
+                <span>Uploading...</span>
               </>
             ) : (
               <>
                 <Upload size={16} />
-                <span>Загрузить бэкап</span>
+                <span>Upload Backup</span>
               </>
             )}
           </button>
@@ -222,12 +222,12 @@ export default function BackupsManager() {
             {actionPending ? (
               <>
                 <RefreshCw className="spin" size={16} />
-                <span>Создание бэкапа...</span>
+                <span>Creating Backup...</span>
               </>
             ) : (
               <>
                 <Plus size={16} />
-                <span>Создать бэкап</span>
+                <span>Create Backup</span>
               </>
             )}
           </button>
@@ -265,7 +265,7 @@ export default function BackupsManager() {
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px" }}>
               <RefreshCw className="spin" size={32} style={{ color: "var(--text-muted)", marginBottom: "12px" }} />
-              <p style={{ color: "var(--text-secondary)" }}>Загрузка файлов резервных копий...</p>
+              <p style={{ color: "var(--text-secondary)" }}>Loading backup files...</p>
             </div>
           ) : backups.length === 0 ? (
             <div className="card" style={{ textAlign: "center", padding: "60px 40px" }}>
@@ -282,9 +282,9 @@ export default function BackupsManager() {
               }}>
                 <Database size={40} />
               </div>
-              <h2 style={{ fontFamily: "var(--font-display)", marginBottom: "8px" }}>Копии не найдены</h2>
+              <h2 style={{ fontFamily: "var(--font-display)", marginBottom: "8px" }}>No Backups Found</h2>
               <p style={{ color: "var(--text-secondary)", maxWidth: "450px", margin: "0 auto 24px auto", fontSize: "0.95rem" }}>
-                Автоматическое резервное копирование запускается при изменении статей. Вы также можете запустить его вручную.
+                Automatic backups run whenever articles are modified. You can also create or upload a backup snapshot manually.
               </p>
             </div>
           ) : (
@@ -292,10 +292,10 @@ export default function BackupsManager() {
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border-color)", background: "rgba(255, 255, 255, 0.01)" }}>
-                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em" }}>Файл копии</th>
-                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em" }}>Размер</th>
-                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em" }}>Дата создания</th>
-                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", textAlign: "right" }}>Действия</th>
+                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em" }}>Backup File</th>
+                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em" }}>Size</th>
+                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em" }}>Created At</th>
+                    <th style={{ padding: "16px 24px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", textAlign: "right" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -319,7 +319,7 @@ export default function BackupsManager() {
                             href={`/api/backups/download?file=${backup.name}`}
                             className="btn"
                             style={{ padding: "6px 10px", fontSize: "0.8rem" }}
-                            title="Скачать копию"
+                            title="Download backup file"
                           >
                             <Download size={14} />
                           </a>
@@ -328,16 +328,16 @@ export default function BackupsManager() {
                             disabled={actionPending || uploading}
                             className="btn"
                             style={{ padding: "6px 12px", fontSize: "0.8rem", color: "var(--accent-cyan)", borderColor: "rgba(96, 165, 250, 0.3)" }}
-                            title="Восстановить БД из этой копии"
+                            title="Restore database from this backup"
                           >
-                            Восстановить
+                            Restore
                           </button>
                           <button
                             onClick={() => handleDelete(backup.name)}
                             disabled={actionPending || uploading}
                             className="btn btn-danger"
                             style={{ padding: "6px 10px", fontSize: "0.8rem" }}
-                            title="Удалить копию"
+                            title="Delete backup file"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -357,14 +357,14 @@ export default function BackupsManager() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
               <Settings2 size={18} style={{ color: "var(--accent-purple)" }} />
               <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.15rem", fontWeight: 600 }}>
-                Настройки резервирования
+                Backup Settings
               </h3>
             </div>
 
             <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {/* Auto Backup Toggle */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Авто-резервирование</span>
+                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>Auto Backup</span>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
                   <label className="toggle-switch">
                     <input
@@ -375,7 +375,7 @@ export default function BackupsManager() {
                     <span className="slider"></span>
                   </label>
                   <span style={{ fontSize: "0.85rem", color: "var(--text-primary)" }}>
-                    {autoBackup ? "Включено" : "Выключено"}
+                    {autoBackup ? "Enabled" : "Disabled"}
                   </span>
                 </div>
               </div>
@@ -383,7 +383,7 @@ export default function BackupsManager() {
               {/* Retention limit (Max backups) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  Хранить последних копий
+                  Retain Max Backups
                 </label>
                 <input
                   type="number"
@@ -395,14 +395,14 @@ export default function BackupsManager() {
                   disabled={!autoBackup}
                 />
                 <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                  Старые бэкапы будут автоматически перезаписываться
+                  Older backups will be automatically purged
                 </span>
               </div>
 
               {/* Interval Schedule */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  Периодичность копий
+                  Backup Schedule
                 </label>
                 <select
                   value={scheduleInterval}
@@ -410,9 +410,9 @@ export default function BackupsManager() {
                   disabled={!autoBackup}
                   style={{ width: "100%" }}
                 >
-                  <option value="daily">Каждый день (Daily)</option>
-                  <option value="weekly">Каждую неделю (Weekly)</option>
-                  <option value="manual">Только вручную (Manual)</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="manual">Manual Only</option>
                 </select>
               </div>
 
@@ -426,10 +426,10 @@ export default function BackupsManager() {
                 {settingsSaving ? (
                   <>
                     <RefreshCw className="spin" size={14} />
-                    <span>Сохранение...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
-                  <span>Сохранить настройки</span>
+                  <span>Save Settings</span>
                 )}
               </button>
             </form>

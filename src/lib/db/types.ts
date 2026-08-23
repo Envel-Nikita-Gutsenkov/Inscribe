@@ -34,6 +34,9 @@ export interface ArticleRef {
 export interface Section {
   id: string;
   title: string;
+  isProtected?: boolean;
+  protectionUsername?: string;
+  protectionPassword?: string;
   articles: ArticleRef[];
 }
 

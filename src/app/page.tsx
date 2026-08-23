@@ -1,5 +1,6 @@
 import React from "react";
 import { getProjects, getSystemSetting } from "@/lib/db";
+import { getDictionary } from "@/lib/i18n";
 import Link from "next/link";
 import { BookOpen, Shield, ArrowRight, Globe, Terminal, Code, Cpu } from "lucide-react";
 import { HomeLayoutClient } from "@/components/HomeLayoutClient";
@@ -14,8 +15,11 @@ const COLORS = [
 
 export default async function HomePage() {
   const projects = getProjects().filter((p) => p.isPublic);
-  const portalTitle = getSystemSetting("portal_title", "Welcome to Inscribe");
-  const portalDescription = getSystemSetting("portal_description", "Search for articles or select a documentation workspace below to get started.");
+  const siteLanguage = getSystemSetting("site_language", "en");
+  const dict = getDictionary(siteLanguage);
+
+  const portalTitle = getSystemSetting("portal_title", dict.home.portalTitle);
+  const portalDescription = getSystemSetting("portal_description", dict.home.portalDescription);
 
   // Map projects to simplified format for client component
   const sidebarProjects = projects.map((p) => ({
@@ -24,7 +28,7 @@ export default async function HomePage() {
   }));
 
   return (
-    <HomeLayoutClient projects={sidebarProjects}>
+    <HomeLayoutClient projects={sidebarProjects} locale={siteLanguage}>
       {/* Header section with Title and Search */}
       <header style={{
         textAlign: "center",
@@ -64,7 +68,7 @@ export default async function HomePage() {
           {portalDescription}
         </p>
 
-        <HomeSearch />
+        <HomeSearch locale={siteLanguage} />
       </header>
 
       {/* Recommended/Public Projects Section */}
@@ -78,13 +82,13 @@ export default async function HomePage() {
           textAlign: "left",
           color: "var(--text-primary)"
         }}>
-          Recommended Projects
+          {dict.home.recommendedProjects}
         </h2>
 
         {projects.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "40px", maxWidth: "500px", margin: "0 auto" }}>
             <p style={{ color: "var(--text-secondary)" }}>
-              No public documentation spaces are currently available. Log in to the Admin Console to create a project and add content.
+              {dict.home.noProjects}
             </p>
           </div>
         ) : (
@@ -137,7 +141,7 @@ export default async function HomePage() {
                   </p>
 
                   <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem", color: "var(--accent-cyan)", fontWeight: 500 }}>
-                    <span>Browse Docs</span>
+                    <span>{dict.home.browseDocs}</span>
                     <ArrowRight size={14} />
                   </div>
                 </Link>
@@ -158,7 +162,7 @@ export default async function HomePage() {
         fontSize: "0.8rem",
         color: "var(--text-muted)"
       }}>
-        <span>Powered by Inscribe © {new Date().getFullYear()}</span>
+        <span>{dict.common.poweredBy} © {new Date().getFullYear()}</span>
       </footer>
     </HomeLayoutClient>
   );

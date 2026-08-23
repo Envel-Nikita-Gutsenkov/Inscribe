@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { MoveLeft, HelpCircle } from "lucide-react";
+import { getSystemSetting } from "@/lib/db";
+import { getDictionary } from "@/lib/i18n";
 
 export default function NotFound() {
+  const siteLanguage = getSystemSetting("site_language", "en");
+  const dict = getDictionary(siteLanguage);
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -55,7 +60,7 @@ export default function NotFound() {
           color: "var(--text-primary)",
           marginBottom: "12px"
         }}>
-          Page Not Found
+          {dict.reader.pageNotFound}
         </h2>
 
         <p style={{
@@ -64,7 +69,7 @@ export default function NotFound() {
           lineHeight: "1.6",
           marginBottom: "30px"
         }}>
-          The page you are looking for does not exist, has been moved, or is temporarily unavailable.
+          {dict.reader.pageNotFoundDesc}
         </p>
 
         <Link href="/" className="btn btn-primary" style={{
@@ -74,7 +79,7 @@ export default function NotFound() {
           textDecoration: "none"
         }}>
           <MoveLeft size={16} />
-          <span>Go Back to Home</span>
+          <span>{dict.reader.returnHome}</span>
         </Link>
       </div>
     </div>

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Cpu, Database, HardDrive, RefreshCw, Layers, CheckCircle, AlertCircle, Save } from "lucide-react";
-import { getSystemStatsAction, optimizeDatabaseAction, clearAllCachesAction, getPortalSettingsAction, updatePortalSettingsAction } from "@/app/actions/systemActions";
+import { getSystemStatsAction, optimizeDatabaseAction, clearAllCachesAction, getPortalSettingsAction, updatePortalSettingsAction, getSiteLanguageAction, updateSiteLanguageAction } from "@/app/actions/systemActions";
+import { Globe } from "lucide-react";
 
 export default function SystemManager() {
   const [stats, setStats] = useState<any>(null);
@@ -11,6 +12,7 @@ export default function SystemManager() {
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [portalTitle, setPortalTitle] = useState("Welcome to Inscribe");
   const [portalDescription, setPortalDescription] = useState("Search for articles or select a documentation workspace below to get started.");
+  const [siteLanguage, setSiteLanguage] = useState("en");
   const [portalPending, setPortalPending] = useState(false);
 
   const fetchStats = async () => {
@@ -33,6 +35,12 @@ export default function SystemManager() {
       }
     });
 
+    getSiteLanguageAction().then((res) => {
+      if (res.success && res.language) {
+        setSiteLanguage(res.language);
+      }
+    });
+
     // Poll every 10 seconds for real-time memory usage updates
     const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
@@ -43,10 +51,11 @@ export default function SystemManager() {
     setPortalPending(true);
     setStatusMsg(null);
     const res = await updatePortalSettingsAction(portalTitle, portalDescription);
-    if (res.success) {
-      setStatusMsg({ type: "success", text: "Portal landing page settings saved successfully." });
+    const langRes = await updateSiteLanguageAction(siteLanguage);
+    if (res.success && langRes.success) {
+      setStatusMsg({ type: "success", text: "Portal and language settings saved successfully." });
     } else {
-      setStatusMsg({ type: "error", text: res.error || "Failed to update portal settings" });
+      setStatusMsg({ type: "error", text: res.error || langRes.error || "Failed to update settings" });
     }
     setPortalPending(false);
   };
@@ -249,10 +258,36 @@ export default function SystemManager() {
                     style={{ resize: "none" }}
                   />
                 </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Globe size={14} />
+                    <span>Site Default Language (Public Frontend)</span>
+                  </label>
+                  <select
+                    value={siteLanguage}
+                    onChange={(e) => setSiteLanguage(e.target.value)}
+                    disabled={portalPending}
+                    style={{
+                      background: "var(--bg-input)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "var(--radius-md)",
+                      padding: "8px 12px",
+                      color: "var(--text-primary)",
+                      fontSize: "0.9rem",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <option value="en">English (EN)</option>
+                    <option value="ru">Русский (RU)</option>
+                  </select>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                    Controls the default language for all public user-facing interfaces, search modals, and documentation readers.
+                  </span>
+                </div>
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button type="submit" className="btn btn-primary" disabled={portalPending}>
                     <Save size={16} />
-                    <span>{portalPending ? "Saving..." : "Save Portal Settings"}</span>
+                    <span>{portalPending ? "Saving..." : "Save Settings"}</span>
                   </button>
                 </div>
               </form>
