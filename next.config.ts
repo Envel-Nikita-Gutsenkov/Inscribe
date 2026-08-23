@@ -26,6 +26,7 @@ fs.writeFileSync(buildInfoPath, JSON.stringify(buildInfo, null, 2));
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["better-sqlite3", "archiver", "unzipper", "sharp"],
   transpilePackages: ["es-toolkit"],
   async headers() {
     return [

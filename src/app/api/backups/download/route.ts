@@ -28,11 +28,12 @@ export async function GET(req: NextRequest) {
 
     const stat = fs.statSync(filePath);
     const fileStream = fs.createReadStream(filePath);
+    const contentType = safeFilename.endsWith(".zip") ? "application/zip" : "application/x-sqlite3";
 
     // @ts-ignore
     return new NextResponse(fileStream, {
       headers: {
-        "Content-Type": "application/x-sqlite3",
+        "Content-Type": contentType,
         "Content-Length": stat.size.toString(),
         "Content-Disposition": `attachment; filename="${safeFilename}"`,
       },

@@ -32,8 +32,8 @@ export async function getBackupsListAction() {
 export async function triggerBackupAction() {
   try {
     await requireSuperadmin();
-    const backupPath = backupDb();
-    const filename = backupPath.split(/[/\\]/).pop() || "backup.sqlite";
+    const backupPath = await backupDb();
+    const filename = backupPath.split(/[/\\]/).pop() || "backup.zip";
     revalidatePath("/admin/backups");
     return { success: true, filename };
   } catch (err: any) {
@@ -65,7 +65,7 @@ export async function saveBackupConfigAction(config: Partial<BackupConfig>) {
 export async function restoreBackupAction(filename: string) {
   try {
     await requireSuperadmin();
-    restoreDb(filename);
+    await restoreDb(filename);
     revalidatePath("/admin/backups");
     return { success: true };
   } catch (err: any) {

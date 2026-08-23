@@ -16,6 +16,9 @@
     "@emnapi/core": "1.11.1",
     "@emnapi/runtime": "1.11.1",
     "@fontsource/noto-sans": "^5.2.10",
+    "@types/archiver": "^8.0.0",
+    "@types/unzipper": "^0.10.11",
+    "archiver": "^8.0.0",
     "better-sqlite3": "^12.11.1",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
@@ -33,6 +36,7 @@
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "sharp": "^0.35.1",
+    "unzipper": "^0.12.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

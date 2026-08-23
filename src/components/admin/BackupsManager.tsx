@@ -179,10 +179,10 @@ export default function BackupsManager() {
       <div className="flex-between" style={{ marginBottom: "40px" }}>
         <div>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2.5rem", fontWeight: 700, letterSpacing: "-0.03em" }}>
-            Database Backups
+            Full System Backups
           </h1>
           <p style={{ color: "var(--text-secondary)" }}>
-            Manage database snapshots, restore previous states, download archives, and configure automatic backups.
+            Manage complete system backups including database, articles, users, 2FA, settings, and media images.
           </p>
         </div>
 
@@ -190,7 +190,7 @@ export default function BackupsManager() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".sqlite"
+            accept=".zip,.sqlite"
             style={{ display: "none" }}
             onChange={handleUploadFile}
           />

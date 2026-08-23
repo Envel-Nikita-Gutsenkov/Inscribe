@@ -2,8 +2,27 @@ import { db } from "./connection";
 import path from "path";
 import fs from "fs";
 import Database from "better-sqlite3";
+function createArchive(format: "zip", options?: any) {
+  const archiver = require("archiver");
+  if (typeof archiver === "function") {
+    return archiver(format, options);
+  }
+  if (format === "zip" && archiver.ZipArchive) {
+    return new archiver.ZipArchive(options);
+  }
+  if (archiver.create) {
+    return archiver.create(format, options);
+  }
+  return new archiver.Archiver(format, options);
+}
+
+function getUnzipper() {
+  return require("unzipper");
+}
 
 const DATA_DIR = path.join(process.cwd(), "data");
+const IMAGES_DIR = path.join(process.cwd(), "public", "images");
+const IMAGES_META_PATH = path.join(process.cwd(), "src", "lib", "images.json");
 
 export interface BackupConfig {
   autoBackup: boolean;
@@ -43,13 +62,15 @@ function cleanOldBackups(backupsDir: string) {
     const config = getBackupConfig();
     const max = config.maxBackups || 5;
     const files = fs.readdirSync(backupsDir)
-      .filter((f) => f.startsWith("db-backup-") && f.endsWith(".sqlite"))
+      .filter((f) => (f.startsWith("inscribe-backup-") || f.startsWith("db-backup-")) && (f.endsWith(".zip") || f.endsWith(".sqlite")))
       .map((f) => ({ name: f, time: fs.statSync(path.join(backupsDir, f)).mtimeMs }))
       .sort((a, b) => b.time - a.time);
 
     if (files.length > max) {
       for (let i = max; i < files.length; i++) {
-        fs.unlinkSync(path.join(backupsDir, files[i].name));
+        try {
+          fs.unlinkSync(path.join(backupsDir, files[i].name));
+        } catch {}
       }
     }
   } catch (err) {
@@ -57,7 +78,93 @@ function cleanOldBackups(backupsDir: string) {
   }
 }
 
-export function restoreDb(filename: string): void {
+function restoreTablesFromDatabase(sourceDbPath: string, activeDbPath: string) {
+  const normPath = sourceDbPath.replace(/\\/g, "/");
+  db.exec("PRAGMA foreign_keys = OFF;");
+  db.exec(`ATTACH DATABASE '${normPath}' AS backup_source_db;`);
+
+  try {
+    // List tables from backup, ignoring SQLite internal and FTS shadow tables
+    const isShadow = (name: string) =>
+      name.startsWith("sqlite_") ||
+      name.endsWith("_data") ||
+      name.endsWith("_idx") ||
+      name.endsWith("_content") ||
+      name.endsWith("_docsize") ||
+      name.endsWith("_config");
+
+    const sourceTables = (
+      db
+        .prepare("SELECT name, sql, type FROM backup_source_db.sqlite_master WHERE type IN ('table', 'view')")
+        .all() as { name: string; sql: string; type: string }[]
+    ).filter((t) => !isShadow(t.name));
+
+    const copyTransaction = db.transaction(() => {
+      // 1. Drop existing main tables (excluding shadow tables)
+      const currentTables = (
+        db
+          .prepare("SELECT name FROM main.sqlite_master WHERE type IN ('table', 'view')")
+          .all() as { name: string }[]
+      ).filter((t) => !isShadow(t.name));
+
+      for (const t of currentTables) {
+        try {
+          db.exec(`DROP TABLE IF EXISTS main."${t.name}";`);
+        } catch {}
+      }
+
+      // 2. Re-create base tables and insert rows
+      for (const t of sourceTables) {
+        if (!t.sql) continue;
+        const isVirtual = t.sql.toUpperCase().includes("VIRTUAL TABLE");
+
+        try {
+          db.exec(t.sql);
+          if (!isVirtual) {
+            db.exec(`INSERT INTO main."${t.name}" SELECT * FROM backup_source_db."${t.name}";`);
+          }
+        } catch (err) {
+          console.warn(`[Restore] Error creating table ${t.name}:`, err);
+        }
+      }
+
+      // 3. Rebuild FTS index if exists
+      try {
+        db.exec("INSERT INTO main.articles_fts(articles_fts) VALUES('rebuild');");
+      } catch {}
+
+      // 4. Re-create indexes
+      const indexes = db
+        .prepare(
+          "SELECT sql FROM backup_source_db.sqlite_master WHERE type='index' AND sql IS NOT NULL"
+        )
+        .all() as { sql: string }[];
+      for (const idx of indexes) {
+        try {
+          db.exec(idx.sql);
+        } catch {}
+      }
+    });
+
+    copyTransaction();
+  } finally {
+    try {
+      db.exec("DETACH DATABASE backup_source_db;");
+    } catch {}
+    db.exec("PRAGMA foreign_keys = ON;");
+  }
+
+  // Also sync to activeDbPath on disk if not test memory
+  if (process.env.NODE_ENV !== "test" && fs.existsSync(sourceDbPath)) {
+    try {
+      const checkDb = new Database(sourceDbPath);
+      checkDb.backup(activeDbPath);
+      checkDb.close();
+    } catch {}
+  }
+}
+
+export async function restoreDb(filename: string): Promise<void> {
   const safeFilename = path.basename(filename);
   const backupsDir = path.join(DATA_DIR, "backups");
   const backupPath = path.join(backupsDir, safeFilename);
@@ -66,18 +173,81 @@ export function restoreDb(filename: string): void {
     throw new Error("Backup file not found");
   }
 
-  // Verify backup file integrity
-  const checkDb = new Database(backupPath);
-  const integrity = checkDb.pragma("integrity_check", { simple: true }) as string;
-  if (integrity !== "ok") {
-    checkDb.close();
-    throw new Error(`Backup file is corrupted: ${integrity}`);
-  }
-
-  // Restore into active DB
   const activeDbPath = path.join(DATA_DIR, "db.sqlite");
-  checkDb.backup(activeDbPath);
-  checkDb.close();
+
+  if (safeFilename.endsWith(".zip")) {
+    const tempExtractDir = path.join(DATA_DIR, "temp", `restore-${Date.now()}`);
+    fs.mkdirSync(tempExtractDir, { recursive: true });
+
+    try {
+      // Unzip full archive
+      const unz = getUnzipper();
+      const directory = await unz.Open.file(backupPath);
+      await directory.extract({ path: tempExtractDir });
+
+      const extractedDbPath = path.join(tempExtractDir, "db.sqlite");
+      if (!fs.existsSync(extractedDbPath)) {
+        throw new Error("Invalid backup archive: db.sqlite not found inside zip");
+      }
+
+      // Verify SQLite integrity
+      const checkDb = new Database(extractedDbPath);
+      const integrity = checkDb.pragma("integrity_check", { simple: true }) as string;
+      checkDb.close();
+      if (integrity !== "ok") {
+        throw new Error(`Backup database is corrupted: ${integrity}`);
+      }
+
+      // Restore active database tables
+      restoreTablesFromDatabase(extractedDbPath, activeDbPath);
+
+      // Clear in-memory LRU cache so restored data is immediately served
+      const { clearCache } = await import("./articles");
+      clearCache();
+
+      // Restore images if present in archive
+      const extractedImagesDir = path.join(tempExtractDir, "images");
+      if (fs.existsSync(extractedImagesDir)) {
+        if (!fs.existsSync(IMAGES_DIR)) {
+          fs.mkdirSync(IMAGES_DIR, { recursive: true });
+        }
+        const imgFiles = fs.readdirSync(extractedImagesDir);
+        for (const file of imgFiles) {
+          const srcFile = path.join(extractedImagesDir, file);
+          const destFile = path.join(IMAGES_DIR, file);
+          fs.copyFileSync(srcFile, destFile);
+        }
+      }
+
+      // Restore images.json if present
+      const extractedMetaPath = path.join(tempExtractDir, "images.json");
+      if (fs.existsSync(extractedMetaPath)) {
+        const metaDir = path.dirname(IMAGES_META_PATH);
+        if (!fs.existsSync(metaDir)) {
+          fs.mkdirSync(metaDir, { recursive: true });
+        }
+        fs.copyFileSync(extractedMetaPath, IMAGES_META_PATH);
+      }
+    } finally {
+      // Clean up extraction temp directory
+      try {
+        fs.rmSync(tempExtractDir, { recursive: true, force: true });
+      } catch {}
+    }
+  } else {
+    // Legacy .sqlite backup restore
+    const checkDb = new Database(backupPath);
+    const integrity = checkDb.pragma("integrity_check", { simple: true }) as string;
+    checkDb.close();
+    if (integrity !== "ok") {
+      throw new Error(`Backup file is corrupted: ${integrity}`);
+    }
+
+    restoreTablesFromDatabase(backupPath, activeDbPath);
+
+    const { clearCache } = await import("./articles");
+    clearCache();
+  }
 }
 
 export function deleteBackupFile(filename: string): void {
@@ -122,50 +292,87 @@ export function runMonthlySnapshot() {
   }
 }
 
-export function backupDb(): string {
+export async function backupDb(): Promise<string> {
   const backupsDir = path.join(DATA_DIR, "backups");
   if (!fs.existsSync(backupsDir)) {
     fs.mkdirSync(backupsDir, { recursive: true });
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const backupPath = path.join(backupsDir, `db-backup-${timestamp}.sqlite`);
-
-  // SQLite online backup API
-  db.backup(backupPath);
-
-  // Verify backup integrity
-  try {
-    const checkDb = new Database(backupPath);
-    const integrity = checkDb.pragma("integrity_check", { simple: true }) as string;
-    checkDb.close();
-    if (integrity !== "ok") {
-      throw new Error(`Integrity check failed: ${integrity}`);
-    }
-  } catch (err) {
-    console.error("Backup integrity check failed!", err);
-    try {
-      fs.unlinkSync(backupPath);
-    } catch {}
-    throw err;
+  const tempDir = path.join(DATA_DIR, "temp");
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
   }
 
-  // Clean older backups
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const tempDbPath = path.join(tempDir, `temp-db-${timestamp}.sqlite`);
+  const finalZipPath = path.join(backupsDir, `inscribe-backup-${timestamp}.zip`);
+
+  // 1. Create clean SQLite online snapshot
+  await db.backup(tempDbPath);
+
+  // 2. Verify database integrity
+  const checkDb = new Database(tempDbPath);
+  const integrity = checkDb.pragma("integrity_check", { simple: true }) as string;
+  checkDb.close();
+  if (integrity !== "ok") {
+    try { fs.unlinkSync(tempDbPath); } catch {}
+    throw new Error(`Integrity check failed: ${integrity}`);
+  }
+
+  // 3. Package full backup ZIP: db.sqlite + public/images + images.json + manifest.json
+  await new Promise<void>((resolve, reject) => {
+    const output = fs.createWriteStream(finalZipPath);
+    const archive = createArchive("zip", { zlib: { level: 9 } });
+
+    output.on("close", () => resolve());
+    output.on("error", (err: any) => reject(err));
+    archive.on("error", (err: any) => reject(err));
+
+    archive.pipe(output);
+
+    // Add SQLite database file
+    archive.file(tempDbPath, { name: "db.sqlite" });
+
+    // Add images directory if exists
+    if (fs.existsSync(IMAGES_DIR)) {
+      archive.directory(IMAGES_DIR, "images");
+    }
+
+    // Add images metadata if exists
+    if (fs.existsSync(IMAGES_META_PATH)) {
+      archive.file(IMAGES_META_PATH, { name: "images.json" });
+    }
+
+    // Add manifest
+    const manifest = {
+      version: "1.0",
+      type: "inscribe_full_backup",
+      createdAt: new Date().toISOString(),
+      platform: "Inscribe Documentation Platform",
+    };
+    archive.append(JSON.stringify(manifest, null, 2), { name: "manifest.json" });
+
+    archive.finalize();
+  });
+
+  // 4. Clean up temporary db file
+  try {
+    fs.unlinkSync(tempDbPath);
+  } catch {}
+
+  // 5. Clean older backups according to retention policy
   cleanOldBackups(backupsDir);
 
-  // Run monthly snapshot check
+  // 6. Run monthly snapshot & global database maintenance
   runMonthlySnapshot();
-
-  // Run global database maintenance asynchronously
   runGlobalMaintenance();
 
-  return backupPath;
+  return finalZipPath;
 }
 
 let lastMaintenanceTime = 0;
 const MAINTENANCE_INTERVAL = 24 * 60 * 60 * 1000;
 
-// Hoisted prepared statements to avoid re-compilation on every maintenance run
 const stmtAllProjects = db.prepare("SELECT slug, historyMaxVersions, historyRetentionDays FROM projects");
 const stmtProjectArticles = db.prepare("SELECT slug FROM articles WHERE projectSlug = ?");
 const stmtPruneByAge = db.prepare(
@@ -188,11 +395,8 @@ export function runGlobalMaintenance(force = false) {
   }
   lastMaintenanceTime = now;
 
-  // Run in a truly async context on the next tick so it doesn't block responses
   setImmediate(() => {
     try {
-      console.log("Running database maintenance & optimization...");
-
       const projects = stmtAllProjects.all() as any[];
       for (const p of projects) {
         const articles = stmtProjectArticles.all(p.slug) as any[];
@@ -205,15 +409,9 @@ export function runGlobalMaintenance(force = false) {
         }
       }
 
-      // Optimize query planner stats
       db.pragma("optimize");
-
-      // VACUUM is heavy — run it in the background via WAL checkpoint first
       db.pragma("wal_checkpoint(TRUNCATE)");
-      // Then reclaim space (this is synchronous but we’re already in setImmediate)
       db.prepare("VACUUM").run();
-
-      console.log("Database maintenance & optimization completed.");
     } catch (err) {
       console.error("Scheduled database maintenance failed:", err);
     }
@@ -228,15 +426,15 @@ export function backupDbDebounced() {
     clearTimeout(backupTimeout);
   }
 
-  backupTimeout = setTimeout(() => {
+  backupTimeout = setTimeout(async () => {
     try {
-      backupDb();
+      await backupDb();
     } catch (err) {
       console.error("Debounced backup failed:", err);
     } finally {
       isBackupPending = false;
     }
-  }, 30000); // 30 seconds
+  }, 30000);
 }
 
 export function getBackupsList(): { name: string; size: number; mtime: number }[] {
@@ -244,7 +442,7 @@ export function getBackupsList(): { name: string; size: number; mtime: number }[
   if (!fs.existsSync(backupsDir)) return [];
   try {
     return fs.readdirSync(backupsDir)
-      .filter((f) => f.startsWith("db-backup-") && f.endsWith(".sqlite"))
+      .filter((f) => (f.startsWith("inscribe-backup-") || f.startsWith("db-backup-")) && (f.endsWith(".zip") || f.endsWith(".sqlite")))
       .map((f) => {
         const stats = fs.statSync(path.join(backupsDir, f));
         return {

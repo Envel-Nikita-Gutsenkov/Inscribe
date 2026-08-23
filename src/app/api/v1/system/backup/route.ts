@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const filename = backupDb();
+    const filename = await backupDb();
     return NextResponse.json({
       success: true,
       message: "Database backup created successfully.",
