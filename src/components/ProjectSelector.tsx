@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getDictionary } from "@/lib/i18n";
 
 interface ProjectSelectorProps {
   projects: Array<{
@@ -10,11 +11,13 @@ interface ProjectSelectorProps {
     name: string;
   }>;
   currentProjectSlug?: string;
+  locale?: string;
 }
 
-export function ProjectSelector({ projects, currentProjectSlug }: ProjectSelectorProps) {
+export function ProjectSelector({ projects, currentProjectSlug, locale }: ProjectSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const dict = getDictionary(locale);
 
   const currentProject = projects.find((p) => p.slug === currentProjectSlug);
 
@@ -43,7 +46,7 @@ export function ProjectSelector({ projects, currentProjectSlug }: ProjectSelecto
         <span style={{ display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           <BookOpen size={16} style={{ color: "var(--accent-cyan)", flexShrink: 0 }} />
           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {currentProject ? currentProject.name : "Select Project..."}
+            {currentProject ? currentProject.name : dict.reader.selectProject}
           </span>
         </span>
         <ChevronDown size={16} style={{ flexShrink: 0 }} />
@@ -65,7 +68,7 @@ export function ProjectSelector({ projects, currentProjectSlug }: ProjectSelecto
         }}>
           {projects.length === 0 ? (
             <div style={{ padding: "10px 12px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-              No projects available
+              {dict.reader.selectProject}
             </div>
           ) : (
             projects.map((project) => (

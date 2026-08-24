@@ -32,6 +32,7 @@ export interface Translations {
     projectProtectedDesc: string;
     sectionProtected: string;
     sectionProtectedDesc: string;
+    selectProject: string;
     emptyProject: string;
     emptyProjectDesc: string;
     pageNotFound: string;
@@ -125,6 +126,7 @@ export const translations: Record<Locale, Translations> = {
       projectProtectedDesc: "This project is private. Enter the passcode to view the documentation.",
       sectionProtected: "Protected Section",
       sectionProtectedDesc: "This section requires authentication. Enter your login and password to view its documentation.",
+      selectProject: "Select Project...",
       emptyProject: "Project is empty",
       emptyProjectDesc: "This documentation workspace has no published articles yet.",
       pageNotFound: "Page not found",
@@ -216,6 +218,7 @@ export const translations: Record<Locale, Translations> = {
       projectProtectedDesc: "Этот проект приватный. Введите код доступа для просмотра документации.",
       sectionProtected: "Защищенный раздел",
       sectionProtectedDesc: "Этот раздел защищен. Введите логин и пароль для доступа к материалам раздела.",
+      selectProject: "Выбрать проект",
       emptyProject: "Проект пуст",
       emptyProjectDesc: "В этом пространстве документации пока нет опубликованных статей.",
       pageNotFound: "Страница не найдена",

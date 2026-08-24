@@ -64,7 +64,7 @@ export function Sidebar({ projects, currentProjectSlug, isOpen = true, locale, o
           )}
         </div>
         
-        <ProjectSelector projects={projects} currentProjectSlug={currentProjectSlug} />
+        <ProjectSelector projects={projects} currentProjectSlug={currentProjectSlug} locale={locale} />
       </div>
 
       <nav className={styles.nav}>
