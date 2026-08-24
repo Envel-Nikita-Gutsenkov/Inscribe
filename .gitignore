@@ -47,5 +47,7 @@ next-env.d.ts
 *.sqlite-shm
 *.db
 /data/backups/
-
 src/lib/build-info.json
+
+# internal deploy docs
+docs/deployment.md
