@@ -24,6 +24,8 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   }
 
   const isSuper = session.role === "superadmin";
+  const { getSystemSetting } = await import("@/lib/db");
+  const siteLanguage = getSystemSetting("site_language", "en");
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -183,6 +185,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
           <SidebarFooter
             username={session.username}
             role={session.role}
+            locale={siteLanguage}
           />
         </ErrorBoundary>
       </aside>

@@ -15,9 +15,10 @@ const UserPreferencesPanel = dynamic(
 interface Props {
   username: string;
   role: "superadmin" | "editor";
+  locale?: string;
 }
 
-export default function SidebarFooter({ username, role }: Props) {
+export default function SidebarFooter({ username, role, locale }: Props) {
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
@@ -122,7 +123,7 @@ export default function SidebarFooter({ username, role }: Props) {
       </div>
 
       {prefsOpen && (
-        <UserPreferencesPanel onClose={() => setPrefsOpen(false)} />
+        <UserPreferencesPanel onClose={() => setPrefsOpen(false)} locale={locale} />
       )}
     </>
   );

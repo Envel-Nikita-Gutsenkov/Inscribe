@@ -29,6 +29,46 @@ db.pragma("mmap_size = 67108864");
 db.pragma("wal_autocheckpoint = 1000");
 
 
+
+// Serialize database initialization across parallel processes during build and runtime
+const LOCK_PATH = path.join(DATA_DIR, ".db-init.lock");
+function withDBInitLock(fn: () => void) {
+  if (isTest) { fn(); return; }
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  const start = Date.now();
+  const acquire = () => {
+    try {
+      const fd = fs.openSync(LOCK_PATH, "wx");
+      fs.closeSync(fd);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const release = () => {
+    try { fs.unlinkSync(LOCK_PATH); } catch { /* ignore */ }
+  };
+  let got = acquire();
+  while (!got) {
+    if (Date.now() - start > 60000) {
+      // Stale lock (e.g. a worker crashed mid-init). Take it anyway.
+      try { fs.unlinkSync(LOCK_PATH); } catch { /* ignore */ }
+      got = acquire();
+    }
+    if (!got) {
+      // Wait for the lock owner to finish before retrying.
+      const sleepUntil = Date.now() + 250;
+      while (Date.now() < sleepUntil) { /* busy-wait briefly */ }
+      got = acquire();
+    }
+  }
+  try {
+    fn();
+  } finally {
+    release();
+  }
+}
+
 // Migration dictionary containing functions that update the schema
 const migrations: { [version: number]: (database: Database.Database) => void } = {
   1: (database) => {
@@ -398,5 +438,4 @@ export function runMigrations() {
   `).run();
 }
 
-runMigrations();
-
+withDBInitLock(runMigrations);

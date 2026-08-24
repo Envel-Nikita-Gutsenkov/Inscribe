@@ -9,15 +9,7 @@ import {
 import {
   UserPrefs, DEFAULT_PREFS, loadPrefs, savePrefs, applyPrefs,
 } from "@/lib/userPrefs";
-
-const ACCENT_PRESETS: { label: string; value: string }[] = [
-  { label: "Blue",    value: "#3b82f6" },
-  { label: "Purple",  value: "#8b5cf6" },
-  { label: "Emerald", value: "#10b981" },
-  { label: "Rose",    value: "#f43f5e" },
-  { label: "Amber",   value: "#f59e0b" },
-  { label: "Cyan",    value: "#06b6d4" },
-];
+import { getDictionary } from "@/lib/i18n";
 
 export function useUserPrefs() {
   const [prefs, setPrefsState] = useState<UserPrefs>(() => {
@@ -55,11 +47,35 @@ export function useUserPrefs() {
 interface Props {
   onClose?: () => void;
   showAdminLink?: boolean;
+  locale?: string;
 }
 
-export default function UserPreferencesPanel({ onClose, showAdminLink = false }: Props) {
+export default function UserPreferencesPanel({ onClose, showAdminLink = false, locale }: Props) {
   const { prefs, setPrefs, resetPrefs, mounted } = useUserPrefs();
   const [saved, setSaved] = useState(false);
+  const [activeLocale, setActiveLocale] = useState(locale || "ru");
+
+  useEffect(() => {
+    if (locale) {
+      setActiveLocale(locale);
+    } else if (typeof document !== "undefined") {
+      const htmlLang = document.documentElement.lang;
+      if (htmlLang === "en" || htmlLang === "ru") {
+        setActiveLocale(htmlLang);
+      }
+    }
+  }, [locale]);
+
+  const dict = getDictionary(activeLocale);
+
+  const ACCENT_PRESETS = [
+    { label: dict.preferences.colorBlue,    value: "#3b82f6" },
+    { label: dict.preferences.colorPurple,  value: "#8b5cf6" },
+    { label: dict.preferences.colorEmerald, value: "#10b981" },
+    { label: dict.preferences.colorRose,    value: "#f43f5e" },
+    { label: dict.preferences.colorAmber,   value: "#f59e0b" },
+    { label: dict.preferences.colorCyan,    value: "#06b6d4" },
+  ];
 
   function handleChange<K extends keyof UserPrefs>(key: K, value: UserPrefs[K]) {
     setPrefs({ [key]: value });
@@ -102,13 +118,13 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
         }}>
           <div>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", fontWeight: 700 }}>
-              Preferences
+              {dict.preferences.title}
             </h2>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {saved && (
               <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.78rem", color: "var(--accent-emerald)" }}>
-                <Check size={12} /> Saved
+                <Check size={12} /> {dict.preferences.saved}
               </span>
             )}
             <button onClick={onClose} className="btn"
@@ -121,20 +137,20 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
         {/* Body */}
         <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: "28px", overflowY: "auto", overscrollBehavior: "contain", flex: 1 }}>
 
-          <Section icon={<Palette size={14} />} title="Appearance">
-            <SettingRow label="Theme">
+          <Section icon={<Palette size={14} />} title={dict.preferences.appearance}>
+            <SettingRow label={dict.preferences.theme}>
               <SegmentedControl
                 options={[
-                  { value: "dark",   label: "Dark",   icon: <Moon size={13} /> },
-                  { value: "light",  label: "Light",  icon: <Sun size={13} /> },
-                  { value: "system", label: "System", icon: <Monitor size={13} /> },
+                  { value: "dark",   label: dict.preferences.themeDark,   icon: <Moon size={13} /> },
+                  { value: "light",  label: dict.preferences.themeLight,  icon: <Sun size={13} /> },
+                  { value: "system", label: dict.preferences.themeSystem, icon: <Monitor size={13} /> },
                 ]}
                 value={prefs.theme}
                 onChange={(v) => handleChange("theme", v as UserPrefs["theme"])}
               />
             </SettingRow>
 
-            <SettingRow label="Accent Color">
+            <SettingRow label={dict.preferences.accentColor}>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 {ACCENT_PRESETS.map((p) => (
                   <button key={p.value} title={p.label}
@@ -154,13 +170,13 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
             </SettingRow>
           </Section>
 
-          <Section icon={<Type size={14} />} title="Typography">
-            <SettingRow label={`Font Size · ${prefs.fontSize}px`}>
+          <Section icon={<Type size={14} />} title={dict.preferences.typography}>
+            <SettingRow label={`${dict.preferences.fontSize} · ${prefs.fontSize}px`}>
               <SliderRow min={12} max={20} step={1} value={prefs.fontSize}
                 onChange={(v) => handleChange("fontSize", v)} />
             </SettingRow>
 
-            <SettingRow label="App Font">
+            <SettingRow label={dict.preferences.appFont}>
               <SegmentedControl
                 options={[
                   { value: "sans",  label: "Sans" },
@@ -174,24 +190,24 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
             </SettingRow>
           </Section>
 
-          <Section icon={<Layout size={14} />} title="Layout">
-            <SettingRow label={`Interface Scale · ${prefs.zoom}%`}>
+          <Section icon={<Layout size={14} />} title={dict.preferences.layout}>
+            <SettingRow label={`${dict.preferences.interfaceScale} · ${prefs.zoom}%`}>
               <SliderRow min={80} max={130} step={5} value={prefs.zoom}
                 onChange={(v) => handleChange("zoom", v)} />
             </SettingRow>
 
-            <SettingRow label="Compact Mode">
+            <SettingRow label={dict.preferences.compactMode}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Reduce padding and spacing</span>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{dict.preferences.compactModeDesc}</span>
                 <Toggle checked={prefs.compactMode} onChange={(v) => handleChange("compactMode", v)} />
               </div>
             </SettingRow>
           </Section>
 
-          <Section icon={<Eye size={14} />} title="Accessibility">
-            <SettingRow label="Reduce Motion">
+          <Section icon={<Eye size={14} />} title={dict.preferences.accessibility}>
+            <SettingRow label={dict.preferences.reduceMotion}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Disable animations</span>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{dict.preferences.reduceMotionDesc}</span>
                 <Toggle checked={prefs.reducedMotion} onChange={(v) => handleChange("reducedMotion", v)} />
               </div>
             </SettingRow>
@@ -224,7 +240,7 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
               }}
             >
               <Shield size={13} />
-              Administration Panel
+              {dict.preferences.adminPanel}
             </Link>
           )}
         </div>
@@ -238,11 +254,11 @@ export default function UserPreferencesPanel({ onClose, showAdminLink = false }:
         }}>
           <button className="btn" onClick={resetPrefs}
             style={{ fontSize: "0.8rem", gap: "6px", color: "var(--text-muted)", background: "transparent", border: "1px solid transparent" }}>
-            <RotateCcw size={12} /> Reset defaults
+            <RotateCcw size={12} /> {dict.preferences.resetDefaults}
           </button>
           <button className="btn btn-primary" onClick={onClose}
             style={{ fontSize: "0.85rem", padding: "8px 20px" }}>
-            Done
+            {dict.preferences.done}
           </button>
         </div>
       </div>

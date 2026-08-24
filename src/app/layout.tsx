@@ -19,13 +19,19 @@ export const metadata: Metadata = {
   description: "Modern, secure multi-project documentation platform",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let lang = "ru";
+  try {
+    const { getSystemSetting } = await import("@/lib/db");
+    lang = getSystemSetting("site_language", "ru");
+  } catch {}
+
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang={lang} className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>{children}</body>
     </html>
   );

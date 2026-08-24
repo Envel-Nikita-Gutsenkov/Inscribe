@@ -26,6 +26,12 @@ describe("i18n Localization System", () => {
     expect(dict.common.home).toBe("Home");
     expect(dict.home.recommendedProjects).toBe("Recommended Projects");
     expect(dict.reader.projectProtected).toBe("Project Protected");
+    expect(dict.preferences.title).toBe("Preferences");
+    expect(dict.preferences.appearance).toBe("Appearance");
+    expect(dict.preferences.themeDark).toBe("Dark");
+    expect(dict.preferences.fontSize).toBe("Font Size");
+    expect(dict.preferences.resetDefaults).toBe("Reset defaults");
+    expect(dict.preferences.done).toBe("Done");
   });
 
   it("returns Russian dictionary when requested", () => {
@@ -35,11 +41,18 @@ describe("i18n Localization System", () => {
     expect(dict.reader.projectProtected).toBe("Проект защищен");
     expect(dict.reader.sectionProtected).toBe("Защищенный раздел");
     expect(dict.common.login).toBe("Войти");
+    expect(dict.preferences.title).toBe("Настройки");
+    expect(dict.preferences.appearance).toBe("Внешний вид");
+    expect(dict.preferences.themeDark).toBe("Темная");
+    expect(dict.preferences.fontSize).toBe("Размер шрифта");
+    expect(dict.preferences.resetDefaults).toBe("Сбросить по умолчанию");
+    expect(dict.preferences.done).toBe("Готово");
   });
 
   it("falls back to English on unsupported locale", () => {
     const dict = getDictionary("fr");
     expect(dict.common.home).toBe("Home");
+    expect(dict.preferences.title).toBe("Preferences");
   });
 });
 

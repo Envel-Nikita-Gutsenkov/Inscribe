@@ -59,16 +59,36 @@ export interface Translations {
   preferences: {
     title: string;
     subtitle: string;
+    saved: string;
+    appearance: string;
     theme: string;
     themeDark: string;
     themeLight: string;
     themeSystem: string;
-    fontFamily: string;
+    accentColor: string;
+    colorBlue: string;
+    colorPurple: string;
+    colorEmerald: string;
+    colorRose: string;
+    colorAmber: string;
+    colorCyan: string;
+    typography: string;
     fontSize: string;
+    appFont: string;
+    layout: string;
+    interfaceScale: string;
+    compactMode: string;
+    compactModeDesc: string;
+    accessibility: string;
+    reduceMotion: string;
+    reduceMotionDesc: string;
+    adminConsole: string;
+    adminPanel: string;
+    resetDefaults: string;
+    done: string;
+    fontFamily: string;
     lineSpacing: string;
     contentWidth: string;
-    resetDefaults: string;
-    adminConsole: string;
   };
 }
 
@@ -130,18 +150,38 @@ export const translations: Record<Locale, Translations> = {
       allProjects: "All Projects",
     },
     preferences: {
-      title: "Reading Preferences",
+      title: "Preferences",
       subtitle: "Customize your documentation reading experience",
+      saved: "Saved",
+      appearance: "Appearance",
       theme: "Theme",
       themeDark: "Dark",
       themeLight: "Light",
       themeSystem: "System",
-      fontFamily: "Font Family",
+      accentColor: "Accent Color",
+      colorBlue: "Blue",
+      colorPurple: "Purple",
+      colorEmerald: "Emerald",
+      colorRose: "Rose",
+      colorAmber: "Amber",
+      colorCyan: "Cyan",
+      typography: "Typography",
       fontSize: "Font Size",
+      appFont: "App Font",
+      layout: "Layout",
+      interfaceScale: "Interface Scale",
+      compactMode: "Compact Mode",
+      compactModeDesc: "Reduce padding and spacing",
+      accessibility: "Accessibility",
+      reduceMotion: "Reduce Motion",
+      reduceMotionDesc: "Disable animations",
+      adminConsole: "Admin Console",
+      adminPanel: "Administration Panel",
+      resetDefaults: "Reset defaults",
+      done: "Done",
+      fontFamily: "Font Family",
       lineSpacing: "Line Spacing",
       contentWidth: "Content Width",
-      resetDefaults: "Reset Defaults",
-      adminConsole: "Admin Console",
     },
   },
   ru: {
@@ -201,18 +241,38 @@ export const translations: Record<Locale, Translations> = {
       allProjects: "Все проекты",
     },
     preferences: {
-      title: "Настройки чтения",
+      title: "Настройки",
       subtitle: "Персонализируйте отображение документации",
+      saved: "Сохранено",
+      appearance: "Внешний вид",
       theme: "Тема оформления",
       themeDark: "Темная",
       themeLight: "Светлая",
       themeSystem: "Системная",
-      fontFamily: "Шрифт",
+      accentColor: "Цвет акцента",
+      colorBlue: "Синий",
+      colorPurple: "Фиолетовый",
+      colorEmerald: "Изумрудный",
+      colorRose: "Розовый",
+      colorAmber: "Янтарный",
+      colorCyan: "Бирюзовый",
+      typography: "Типографика",
       fontSize: "Размер шрифта",
+      appFont: "Шрифт приложения",
+      layout: "Макет",
+      interfaceScale: "Масштаб интерфейса",
+      compactMode: "Компактный режим",
+      compactModeDesc: "Уменьшить отступы и интервалы",
+      accessibility: "Специальные возможности",
+      reduceMotion: "Уменьшить движение",
+      reduceMotionDesc: "Отключить анимации",
+      adminConsole: "Консоль администратора",
+      adminPanel: "Панель управления",
+      resetDefaults: "Сбросить по умолчанию",
+      done: "Готово",
+      fontFamily: "Шрифт",
       lineSpacing: "Межстрочный интервал",
       contentWidth: "Ширина контента",
-      resetDefaults: "Сбросить по умолчанию",
-      adminConsole: "Консоль администратора",
     },
   },
 };

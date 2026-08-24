@@ -103,6 +103,7 @@ export function Sidebar({ projects, currentProjectSlug, isOpen = true, locale, o
       {prefsOpen && (
         <UserPreferencesPanel
           onClose={() => setPrefsOpen(false)}
+          locale={locale}
           showAdminLink
         />
       )}

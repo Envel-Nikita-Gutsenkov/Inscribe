@@ -17,9 +17,10 @@ interface Props {
   articleSlug?: string;
   /** TOC passed from server so SW can prefetch adjacent articles */
   toc?: Section[];
+  locale?: string;
 }
 
-export default function ReaderClientShell({ projectSlug, articleSlug, toc }: Props) {
+export default function ReaderClientShell({ projectSlug, articleSlug, toc, locale }: Props) {
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
@@ -127,6 +128,7 @@ export default function ReaderClientShell({ projectSlug, articleSlug, toc }: Pro
       {prefsOpen && (
         <UserPreferencesPanel
           onClose={() => setPrefsOpen(false)}
+          locale={locale}
           showAdminLink
         />
       )}
